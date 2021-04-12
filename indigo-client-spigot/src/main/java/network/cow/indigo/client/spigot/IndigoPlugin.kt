@@ -18,7 +18,10 @@ class IndigoPlugin : JavaPlugin() {
     lateinit var asyncStub: IndigoServiceGrpc.IndigoServiceStub
 
     override fun onEnable() {
-        this.channel = ManagedChannelBuilder.forAddress("localhost", 6969).usePlaintext().build()
+        this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
+                .usePlaintext()
+                .build()
+
         this.blockingStub = IndigoServiceGrpc.newBlockingStub(channel)
         this.asyncStub = IndigoServiceGrpc.newStub(channel)
 

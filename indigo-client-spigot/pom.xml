@@ -29,6 +29,12 @@
       <artifactId>indigo</artifactId>
       <version>v1</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty-shaded</artifactId>
+      <version>1.36.0</version>
+    </dependency>
   </dependencies>
 
   <build>

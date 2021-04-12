@@ -32,7 +32,7 @@ class TestCommand(val plugin: IndigoPlugin) : CommandExecutor {
 
                     override fun onError(p0: Throwable?) {
                         // something went wrong ..
-                        plugin.logger.warning(p0?.message)
+                        p0?.printStackTrace()
                         sender.sendMessage("§4Something went wrong during the request to get your roles.")
                     }
 
