@@ -16,4 +16,19 @@
     <maven.compiler.target>8</maven.compiler.target>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>cow-releases</id>
+      <url>https://maven.cow.network/releases</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>network.cow.mooapis</groupId>
+      <artifactId>indigo</artifactId>
+      <version>v1</version>
+    </dependency>
+  </dependencies>
+
 </project>

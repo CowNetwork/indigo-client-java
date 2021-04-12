@@ -24,6 +24,10 @@
       <id>cow-releases</id>
       <url>https://maven.cow.network/releases</url>
     </repository>
+    <repository>
+      <id>cow</id>
+      <url>https://maven.cow.network/internal</url>
+    </repository>
   </repositories>
 
   <dependencies>
