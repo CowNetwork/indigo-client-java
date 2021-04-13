@@ -2,7 +2,7 @@ package network.cow.indigo.client.spigot
 
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import network.cow.indigo.client.spigot.command.TestCommand
+import network.cow.indigo.client.spigot.command.RolesCommand
 import network.cow.mooapis.indigo.v1.IndigoServiceGrpc
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
@@ -19,13 +19,13 @@ class IndigoPlugin : JavaPlugin() {
 
     override fun onEnable() {
         this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
-                .usePlaintext()
-                .build()
+            .usePlaintext()
+            .build()
 
         this.blockingStub = IndigoServiceGrpc.newBlockingStub(channel)
         this.asyncStub = IndigoServiceGrpc.newStub(channel)
 
-        this.getCommand("test")?.setExecutor(TestCommand(this))
+        this.getCommand("roles")?.setExecutor(RolesCommand(this))
         Bukkit.getPluginManager().registerEvents(PlayerListener(this), this)
     }
 

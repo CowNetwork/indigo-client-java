@@ -5,4 +5,4 @@ author: Tobias B.
 api-version: 1.16
 
 commands:
-    test:
+    roles:
