@@ -25,7 +25,9 @@ class IndigoPlugin : JavaPlugin() {
         this.blockingStub = IndigoServiceGrpc.newBlockingStub(channel)
         this.asyncStub = IndigoServiceGrpc.newStub(channel)
 
-        this.getCommand("roles")?.setExecutor(RolesCommand(this))
+        val rolesCommand = RolesCommand(this)
+        this.getCommand("roles")?.setExecutor(rolesCommand)
+        this.getCommand("roles")?.tabCompleter = rolesCommand
         Bukkit.getPluginManager().registerEvents(PlayerListener(this), this)
     }
 
