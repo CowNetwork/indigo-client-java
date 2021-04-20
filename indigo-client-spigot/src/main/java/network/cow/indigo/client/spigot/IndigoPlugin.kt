@@ -3,6 +3,9 @@ package network.cow.indigo.client.spigot
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Status
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
 import network.cow.indigo.client.spigot.command.RolesCommand
 import network.cow.mooapis.indigo.v1.IndigoServiceGrpc
 import network.cow.mooapis.indigo.v1.ListRolesRequest
@@ -58,7 +61,7 @@ class IndigoPlugin : JavaPlugin() {
         logger.info("Loaded a total of ${roles.size} roles.")
 
         // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
-        /*roles.values.forEach {
+        roles.values.forEach {
             val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
             // TODO maybe type=`minecraft` instead of having it inside the id?
             // -> the PRIMARY_KEY would be `type`+`id` then
@@ -72,8 +75,8 @@ class IndigoPlugin : JavaPlugin() {
             val bukkitColor = NamedTextColor.nearestTo(TextColor.color(color.red, color.green, color.blue))
 
             team.color(NamedTextColor.GRAY)
-            team.prefix(Component.text(it.id + " ", NamedTextColor.RED))
-        }*/
+            team.prefix(Component.text(it.id + " ", bukkitColor))
+        }
     }
 
     override fun onDisable() {

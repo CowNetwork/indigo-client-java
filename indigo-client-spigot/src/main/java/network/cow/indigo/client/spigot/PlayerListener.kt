@@ -5,17 +5,23 @@ import network.cow.indigo.client.spigot.permission.InjectedPermissibleBase
 import network.cow.indigo.client.spigot.permission.injectPermissibleBase
 import network.cow.mooapis.indigo.v1.GetUserRequest
 import network.cow.mooapis.indigo.v1.GetUserResponse
+import network.cow.mooapis.indigo.v1.User
+import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import java.util.UUID
 
 /**
  * @author Tobias Büser
  */
 class PlayerListener(private val plugin: IndigoPlugin) : Listener {
 
+    private val indigoUsers = mutableMapOf<UUID, User>()
+
     @EventHandler
+
     fun onJoin(event: PlayerJoinEvent) {
         val uniqueId = event.player.uniqueId
 
@@ -38,24 +44,37 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
             }
 
             val indigoUser = response!!.user
+            indigoUsers[uniqueId] = indigoUser
 
             injectPermissibleBase(event.player, InjectedPermissibleBase(event.player, indigoUser))
             event.player.updateCommands()
 
             // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
             // create scoreboard team of role
-            /*val role = indigoUser.rolesList.maxByOrNull { it.priority }!!
-            val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
-            val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
+            Bukkit.getScheduler().runTask(plugin, Runnable {
+                val role = indigoUser.rolesList.maxByOrNull { it.priority }!!
+                val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
+                val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
 
-            if (team != null && !team.hasEntry(event.player.name)) {
-                team.addEntry(event.player.name)
-            }*/
+                if (team != null && !team.hasEntry(event.player.name)) {
+                    team.addEntry(event.player.name)
+                }
+            })
         }
     }
 
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
+        val player = event.player
+        val indigoUser = indigoUsers.remove(player.uniqueId) ?: return
+
+        val role = indigoUser.rolesList.maxByOrNull { it.priority }!!
+        val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
+        val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
+
+        if (team != null && team.hasEntry(event.player.name)) {
+            team.removeEntry(event.player.name)
+        }
     }
 
 }
