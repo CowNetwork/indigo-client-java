@@ -4,7 +4,7 @@ import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.runAsync
-import network.cow.mooapis.indigo.v1.AddRolePermissionRequest
+import network.cow.mooapis.indigo.v1.AddRolePermissionsRequest
 import network.cow.mooapis.indigo.v1.DeleteRoleRequest
 import network.cow.mooapis.indigo.v1.GetRoleRequest
 import network.cow.mooapis.indigo.v1.GetRoleResponse
@@ -14,7 +14,7 @@ import network.cow.mooapis.indigo.v1.InsertRoleRequest
 import network.cow.mooapis.indigo.v1.InsertRoleResponse
 import network.cow.mooapis.indigo.v1.ListRolesRequest
 import network.cow.mooapis.indigo.v1.ListRolesResponse
-import network.cow.mooapis.indigo.v1.RemoveRolePermissionRequest
+import network.cow.mooapis.indigo.v1.RemoveRolePermissionsRequest
 import network.cow.mooapis.indigo.v1.Role
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -64,10 +64,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
                 }
                 "permission" -> {
                     if (args.size == 1) {
-                        sender.sendMessage("§cAvailable sub commands:")
-                        sender.sendMessage("§7- /roles permission list <name>")
-                        sender.sendMessage("§7- /roles permission add <name> <permission>")
-                        sender.sendMessage("§7- /roles permission remove <name> <permission>")
+                        sendPermissionUsage(sender)
                         return@runAsync
                     }
                     permission(sender, args.slice(1 until args.size))
@@ -112,6 +109,13 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         sender.sendMessage("§7- /roles permission remove <name> <permission>")
         sender.sendMessage("§7- /roles assign <player> <role>")
         sender.sendMessage("§7- /roles unassign <player> <role>")
+    }
+
+    private fun sendPermissionUsage(sender: CommandSender) {
+        sender.sendMessage("§cAvailable sub commands:")
+        sender.sendMessage("§7- /roles permission list <name>")
+        sender.sendMessage("§7- /roles permission add <name> <permission>")
+        sender.sendMessage("§7- /roles permission remove <name> <permission>")
     }
 
     private fun list(sender: CommandSender, player: String?) {
@@ -231,6 +235,9 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
                 }
                 this.permissionRemove(sender, args[1], args[2])
             }
+            else -> {
+                sendPermissionUsage(sender)
+            }
         }
     }
 
@@ -255,8 +262,8 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
 
     private fun permissionAdd(sender: CommandSender, name: String, permission: String) {
         val status = handleGrpc {
-            plugin.blockingStub.addRolePermission(
-                AddRolePermissionRequest.newBuilder()
+            plugin.blockingStub.addRolePermissions(
+                AddRolePermissionsRequest.newBuilder()
                     .setRoleId(name)
                     .addPermissions(permission)
                     .build()
@@ -274,8 +281,8 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
 
     private fun permissionRemove(sender: CommandSender, name: String, permission: String) {
         val status = handleGrpc {
-            plugin.blockingStub.removeRolePermission(
-                RemoveRolePermissionRequest.newBuilder()
+            plugin.blockingStub.removeRolePermissions(
+                RemoveRolePermissionsRequest.newBuilder()
                     .setRoleId(name)
                     .addPermissions(permission)
                     .build()
