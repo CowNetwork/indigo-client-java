@@ -2,15 +2,11 @@ package network.cow.indigo.client.spigot
 
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import io.grpc.Status
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import network.cow.indigo.client.spigot.command.RolesCommand
 import network.cow.mooapis.indigo.v1.IndigoServiceGrpc
-import network.cow.mooapis.indigo.v1.ListRolesRequest
-import network.cow.mooapis.indigo.v1.ListRolesResponse
-import network.cow.mooapis.indigo.v1.Role
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.awt.Color
@@ -25,7 +21,8 @@ class IndigoPlugin : JavaPlugin() {
     lateinit var blockingStub: IndigoServiceGrpc.IndigoServiceBlockingStub
     lateinit var asyncStub: IndigoServiceGrpc.IndigoServiceStub
 
-    var roles = mutableMapOf<String, Role>()
+    // TODO map from player to custom permissions
+    lateinit var roleCache: RoleCache
 
     override fun onEnable() {
         this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
@@ -41,29 +38,13 @@ class IndigoPlugin : JavaPlugin() {
         Bukkit.getPluginManager().registerEvents(PlayerListener(this), this)
 
         // load all roles and permission
-        // and create the scoreboard teams
-        logger.info("Loading roles...")
-        var response: ListRolesResponse? = null
-        val status = handleGrpc {
-            response = this.blockingStub.listRoles(ListRolesRequest.newBuilder().build())
-        }
-        if (!status.isOk()) {
-            status.handle(Status.Code.UNAVAILABLE) {
-                logger.warning("Could not load roles because the service is offline.")
-            }.handle {
-                logger.warning("Could not load roles because of an error.")
-                status.error?.printStackTrace()
-            }
-            return
-        }
-        response!!.rolesList.forEach { roles[it.id] = it }
-
-        logger.info("Loaded a total of ${roles.size} roles.")
+        roleCache = RoleCache(blockingStub, this)
+        roleCache.reloadFromService()
 
         // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
-        roles.values.forEach {
+        roleCache.getRoles().forEach {
             val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
-            // TODO maybe type=`minecraft` instead of having it inside the id?
+            // TODO type=`minecraft` instead of having it inside the id
             // -> the PRIMARY_KEY would be `type`+`id` then
             val teamName = "${it.priority}_${it.id.take(12)}"
 

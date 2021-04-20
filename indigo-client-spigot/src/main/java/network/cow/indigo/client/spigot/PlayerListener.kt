@@ -21,7 +21,6 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
     private val indigoUsers = mutableMapOf<UUID, User>()
 
     @EventHandler
-
     fun onJoin(event: PlayerJoinEvent) {
         val uniqueId = event.player.uniqueId
 
@@ -44,6 +43,8 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
             }
 
             val indigoUser = response!!.user
+            plugin.roleCache.updateRolesAndFireEvent(*indigoUser.rolesList.toTypedArray())
+
             indigoUsers[uniqueId] = indigoUser
 
             injectPermissibleBase(event.player, InjectedPermissibleBase(event.player, indigoUser))
