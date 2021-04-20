@@ -88,6 +88,9 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             }
             return subCommands.filter { it.startsWith(current) }.toMutableList()
         }
+        if (args.size > 1) {
+            return mutableListOf()
+        }
 
         val subCommands = mutableListOf("list", "info", "add", "delete", "permission")
 
@@ -129,7 +132,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             if (!status.isOk()) {
                 status.handle(Status.Code.NOT_FOUND) {
                     sender.sendMessage("§cUser does not have any roles.")
-                }.handleDefault(sender)
+                }.handleCommandDefault(sender)
                 return
             }
 
@@ -145,7 +148,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             response = plugin.blockingStub.listRoles(ListRolesRequest.newBuilder().build())
         }
         if (!status.isOk()) {
-            status.handleDefault(sender)
+            status.handleCommandDefault(sender)
             return
         }
 
@@ -163,7 +166,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
                 sender.sendMessage("§cRole does not exist.")
-            }.handleDefault(sender)
+            }.handleCommandDefault(sender)
             return
         }
 
@@ -185,7 +188,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         if (!status.isOk()) {
             status.handle(Status.Code.ALREADY_EXISTS) {
                 sender.sendMessage("§cRole already exists.")
-            }.handleDefault(sender)
+            }.handleCommandDefault(sender)
             return
         }
 
@@ -205,7 +208,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
                 sender.sendMessage("§cRole does not exist.")
-            }.handleDefault(sender)
+            }.handleCommandDefault(sender)
             return
         }
 
@@ -249,7 +252,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
                 sender.sendMessage("§cRole does not exist.")
-            }.handleDefault(sender)
+            }.handleCommandDefault(sender)
             return
         }
 
@@ -272,7 +275,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
                 sender.sendMessage("§cRole does not exist.")
-            }.handleDefault(sender)
+            }.handleCommandDefault(sender)
             return
         }
 
@@ -291,7 +294,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
                 sender.sendMessage("§cRole does not exist.")
-            }.handleDefault(sender)
+            }.handleCommandDefault(sender)
             return
         }
 
