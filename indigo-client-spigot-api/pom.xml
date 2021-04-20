@@ -25,9 +25,15 @@
 
   <dependencies>
     <dependency>
-      <groupId>network.cow.mooapis</groupId>
-      <artifactId>indigo</artifactId>
-      <version>v1</version>
+      <groupId>network.cow.grape</groupId>
+      <artifactId>grape-api</artifactId>
+      <version>0.3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.destroystokyo.paper</groupId>
+      <artifactId>paper-api</artifactId>
+      <version>1.16.5-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

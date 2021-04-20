@@ -2,15 +2,20 @@ package network.cow.indigo.client.spigot.command
 
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
+import network.cow.indigo.client.spigot.handleGrpc
+import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.AddRolePermissionRequest
 import network.cow.mooapis.indigo.v1.DeleteRoleRequest
 import network.cow.mooapis.indigo.v1.GetRoleRequest
+import network.cow.mooapis.indigo.v1.GetRoleResponse
 import network.cow.mooapis.indigo.v1.GetUserRolesRequest
+import network.cow.mooapis.indigo.v1.GetUserRolesResponse
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
+import network.cow.mooapis.indigo.v1.InsertRoleResponse
 import network.cow.mooapis.indigo.v1.ListRolesRequest
+import network.cow.mooapis.indigo.v1.ListRolesResponse
 import network.cow.mooapis.indigo.v1.RemoveRolePermissionRequest
 import network.cow.mooapis.indigo.v1.Role
-import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -27,51 +32,49 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             return true
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, object : Runnable {
-            override fun run() {
-                when (args[0]) {
-                    "list" -> {
-                        if (args.size == 1) {
-                            list(sender, null)
-                        } else {
-                            list(sender, args[1])
-                        }
+        runAsync {
+            when (args[0]) {
+                "list" -> {
+                    if (args.size == 1) {
+                        list(sender, null)
+                    } else {
+                        list(sender, args[1])
                     }
-                    "info" -> {
-                        if (args.size == 1) {
-                            sender.sendMessage("§c/roles info <name>")
-                            return
-                        }
-                        info(sender, args[1])
-                    }
-                    "add" -> {
-                        if (args.size == 1) {
-                            sender.sendMessage("§c/roles add <name>")
-                            return
-                        }
-                        add(sender, args[1])
-                    }
-                    "delete" -> {
-                        if (args.size == 1) {
-                            sender.sendMessage("§c/roles delete <name>")
-                            return
-                        }
-                        delete(sender, args[1])
-                    }
-                    "permission" -> {
-                        if (args.size == 1) {
-                            sender.sendMessage("§cAvailable sub commands:")
-                            sender.sendMessage("§7- /roles permission list <name>")
-                            sender.sendMessage("§7- /roles permission add <name> <permission>")
-                            sender.sendMessage("§7- /roles permission remove <name> <permission>")
-                            return
-                        }
-                        permission(sender, args.slice(1..args.size))
-                    }
-                    else -> sendUsage(sender)
                 }
+                "info" -> {
+                    if (args.size == 1) {
+                        sender.sendMessage("§c/roles info <name>")
+                        return@runAsync
+                    }
+                    info(sender, args[1])
+                }
+                "add" -> {
+                    if (args.size == 1) {
+                        sender.sendMessage("§c/roles add <name>")
+                        return@runAsync
+                    }
+                    add(sender, args[1])
+                }
+                "delete" -> {
+                    if (args.size == 1) {
+                        sender.sendMessage("§c/roles delete <name>")
+                        return@runAsync
+                    }
+                    delete(sender, args[1])
+                }
+                "permission" -> {
+                    if (args.size == 1) {
+                        sender.sendMessage("§cAvailable sub commands:")
+                        sender.sendMessage("§7- /roles permission list <name>")
+                        sender.sendMessage("§7- /roles permission add <name> <permission>")
+                        sender.sendMessage("§7- /roles permission remove <name> <permission>")
+                        return@runAsync
+                    }
+                    permission(sender, args.slice(1 until args.size))
+                }
+                else -> sendUsage(sender)
             }
-        })
+        }
         return true
     }
 
@@ -113,139 +116,96 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
 
     private fun list(sender: CommandSender, player: String?) {
         if (player != null) {
-            try {
-                val response = plugin.blockingStub.getUserRoles(GetUserRolesRequest.newBuilder().setUserAccountId(player).build())
+            var response: GetUserRolesResponse? = null
+            val status = handleGrpc {
+                response = plugin.blockingStub.getUserRoles(
+                    GetUserRolesRequest.newBuilder().setUserAccountId(player).build()
+                )
+            }
+            if (!status.isOk()) {
+                status.handle(Status.Code.NOT_FOUND) {
+                    sender.sendMessage("§cUser does not have any roles.")
+                }.handleDefault(sender)
+                return
+            }
 
-                sender.sendMessage("§aUser has roles:")
-                response.rolesList.forEach {
-                    sender.sendMessage("§7- §f${it.id} (color: ${it.color})")
-                }
-            } catch (ex: Exception) {
-                val status = Status.fromThrowable(ex)
-
-                when (status.code) {
-                    Status.Code.NOT_FOUND -> {
-                        sender.sendMessage("§cUser does not have any roles.")
-                    }
-                    Status.Code.UNAVAILABLE -> {
-                        sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                    }
-                    else -> {
-                        sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                        ex.printStackTrace()
-                    }
-                }
+            sender.sendMessage("§aUser has roles:")
+            response!!.rolesList.forEach {
+                sender.sendMessage("§7- §f${it.id} (color: ${it.color})")
             }
             return
         }
 
-        try {
-            val response = plugin.blockingStub.listRoles(ListRolesRequest.newBuilder().build())
+        var response: ListRolesResponse? = null
+        val status = handleGrpc {
+            response = plugin.blockingStub.listRoles(ListRolesRequest.newBuilder().build())
+        }
+        if (!status.isOk()) {
+            status.handleDefault(sender)
+            return
+        }
 
-            sender.sendMessage("§aAvailable roles:")
-            response.rolesList.forEach {
-                sender.sendMessage("§7- §f${it.id} (color: ${it.color})")
-            }
-        } catch (ex: Exception) {
-            val status = Status.fromThrowable(ex)
-
-            when (status.code) {
-                Status.Code.UNAVAILABLE -> {
-                    sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                }
-                else -> {
-                    sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                    ex.printStackTrace()
-                }
-            }
+        sender.sendMessage("§aAvailable roles:")
+        response!!.rolesList.forEach {
+            sender.sendMessage("§7- §f${it.id} (color: ${it.color})")
         }
     }
 
     private fun info(sender: CommandSender, name: String) {
-        try {
-            val response = plugin.blockingStub.getRole(GetRoleRequest.newBuilder().setRoleId(name).build())
-
-            val role = response.role
-            sender.sendMessage("§aRole info of $name:")
-            sender.sendMessage("§7- Priority: §f${role.priority}")
-            sender.sendMessage("§7- Color: §f${role.color}")
-            sender.sendMessage("§7- Transient: §f${role.transient}")
-            sender.sendMessage("§7- Permissions: §f${role.permissionsCount}")
-        } catch (ex: Exception) {
-            val status = Status.fromThrowable(ex)
-
-            when (status.code) {
-                Status.Code.NOT_FOUND -> {
-                    sender.sendMessage("§cRole does not exist.")
-                }
-                Status.Code.UNAVAILABLE -> {
-                    sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                }
-                else -> {
-                    sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                    ex.printStackTrace()
-                }
-            }
+        var response: GetRoleResponse? = null
+        val status = handleGrpc {
+            response = plugin.blockingStub.getRole(GetRoleRequest.newBuilder().setRoleId(name).build())
         }
+        if (!status.isOk()) {
+            status.handle(Status.Code.NOT_FOUND) {
+                sender.sendMessage("§cRole does not exist.")
+            }.handleDefault(sender)
+            return
+        }
+
+        val role = response!!.role
+        sender.sendMessage("§aRole info of $name:")
+        sender.sendMessage("§7- Priority: §f${role.priority}")
+        sender.sendMessage("§7- Color: §f${role.color}")
+        sender.sendMessage("§7- Transient: §f${role.transient}")
+        sender.sendMessage("§7- Permissions: §f${role.permissionsCount}")
     }
 
     private fun add(sender: CommandSender, name: String) {
-        try {
-            val response = plugin.blockingStub.insertRole(
-                InsertRoleRequest.newBuilder()
-                    .setRole(
-                        Role.newBuilder()
-                            .setId(name)
-                            .build()
-                    ).build()
+        var response: InsertRoleResponse? = null
+        val status = handleGrpc {
+            response = plugin.blockingStub.insertRole(
+                InsertRoleRequest.newBuilder().setRole(Role.newBuilder().setId(name).build()).build()
             )
+        }
+        if (!status.isOk()) {
+            status.handle(Status.Code.ALREADY_EXISTS) {
+                sender.sendMessage("§cRole already exists.")
+            }.handleDefault(sender)
+            return
+        }
 
-            if (response.insertedRole != null) {
-                sender.sendMessage("§aRole $name added.")
-            }
-        } catch (ex: Exception) {
-            val status = Status.fromThrowable(ex)
-
-            when (status.code) {
-                Status.Code.ALREADY_EXISTS -> {
-                    sender.sendMessage("§cRole already exists.")
-                }
-                Status.Code.UNAVAILABLE -> {
-                    sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                }
-                else -> {
-                    sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                    ex.printStackTrace()
-                }
-            }
+        if (response!!.insertedRole != null) {
+            sender.sendMessage("§aRole $name added.")
         }
     }
 
     private fun delete(sender: CommandSender, name: String) {
-        try {
+        val status = handleGrpc {
             plugin.blockingStub.deleteRole(
                 DeleteRoleRequest.newBuilder()
                     .setRoleId(name)
                     .build()
             )
-
-            sender.sendMessage("§aRole $name removed.")
-        } catch (ex: Exception) {
-            val status = Status.fromThrowable(ex)
-
-            when (status.code) {
-                Status.Code.NOT_FOUND -> {
-                    sender.sendMessage("§cRole does not exist.")
-                }
-                Status.Code.UNAVAILABLE -> {
-                    sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                }
-                else -> {
-                    sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                    ex.printStackTrace()
-                }
-            }
         }
+        if (!status.isOk()) {
+            status.handle(Status.Code.NOT_FOUND) {
+                sender.sendMessage("§cRole does not exist.")
+            }.handleDefault(sender)
+            return
+        }
+
+        sender.sendMessage("§aRole $name removed.")
     }
 
     private fun permission(sender: CommandSender, args: List<String>) {
@@ -275,86 +235,60 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     private fun permissionList(sender: CommandSender, name: String) {
-        try {
-            val response = plugin.blockingStub.getRole(GetRoleRequest.newBuilder().setRoleId(name).build())
+        var response: GetRoleResponse? = null
+        val status = handleGrpc {
+            response = plugin.blockingStub.getRole(GetRoleRequest.newBuilder().setRoleId(name).build())
+        }
+        if (!status.isOk()) {
+            status.handle(Status.Code.NOT_FOUND) {
+                sender.sendMessage("§cRole does not exist.")
+            }.handleDefault(sender)
+            return
+        }
 
-            val role = response.role
-            sender.sendMessage("§aPermission list of $role:")
-            role.permissionsList.forEach {
-                sender.sendMessage("§7- $it")
-            }
-        } catch (ex: Exception) {
-            val status = Status.fromThrowable(ex)
-
-            when (status.code) {
-                Status.Code.NOT_FOUND -> {
-                    sender.sendMessage("§cRole does not exist.")
-                }
-                Status.Code.UNAVAILABLE -> {
-                    sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                }
-                else -> {
-                    sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                    ex.printStackTrace()
-                }
-            }
+        val role = response!!.role
+        sender.sendMessage("§aPermission list of ${role.id}:")
+        role.permissionsList.forEach {
+            sender.sendMessage("§7- $it")
         }
     }
 
     private fun permissionAdd(sender: CommandSender, name: String, permission: String) {
-        try {
-            val response = plugin.blockingStub.addRolePermission(
+        val status = handleGrpc {
+            plugin.blockingStub.addRolePermission(
                 AddRolePermissionRequest.newBuilder()
                     .setRoleId(name)
                     .addPermissions(permission)
                     .build()
             )
-
-            sender.sendMessage("§aPermission added.")
-        } catch (ex: Exception) {
-            val status = Status.fromThrowable(ex)
-
-            when (status.code) {
-                Status.Code.NOT_FOUND -> {
-                    sender.sendMessage("§cRole does not exist.")
-                }
-                Status.Code.UNAVAILABLE -> {
-                    sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                }
-                else -> {
-                    sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                    ex.printStackTrace()
-                }
-            }
         }
+        if (!status.isOk()) {
+            status.handle(Status.Code.NOT_FOUND) {
+                sender.sendMessage("§cRole does not exist.")
+            }.handleDefault(sender)
+            return
+        }
+
+        sender.sendMessage("§aPermission added.")
     }
 
     private fun permissionRemove(sender: CommandSender, name: String, permission: String) {
-        try {
-            val response = plugin.blockingStub.removeRolePermission(
+        val status = handleGrpc {
+            plugin.blockingStub.removeRolePermission(
                 RemoveRolePermissionRequest.newBuilder()
                     .setRoleId(name)
                     .addPermissions(permission)
                     .build()
             )
-
-            sender.sendMessage("§aPermission removed.")
-        } catch (ex: Exception) {
-            val status = Status.fromThrowable(ex)
-
-            when (status.code) {
-                Status.Code.NOT_FOUND -> {
-                    sender.sendMessage("§cRole does not exist.")
-                }
-                Status.Code.UNAVAILABLE -> {
-                    sender.sendMessage("§cThe service is currently offline. Please try again later.")
-                }
-                else -> {
-                    sender.sendMessage("§4There have been an error during the request. Please look into the log.")
-                    ex.printStackTrace()
-                }
-            }
         }
+        if (!status.isOk()) {
+            status.handle(Status.Code.NOT_FOUND) {
+                sender.sendMessage("§cRole does not exist.")
+            }.handleDefault(sender)
+            return
+        }
+
+        sender.sendMessage("§aPermission removed.")
     }
 
 
