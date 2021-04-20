@@ -41,12 +41,21 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
 
             injectPermissibleBase(event.player, InjectedPermissibleBase(event.player, indigoUser))
             event.player.updateCommands()
+
+            // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
+            // create scoreboard team of role
+            /*val role = indigoUser.rolesList.maxByOrNull { it.priority }!!
+            val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
+            val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
+
+            if (team != null && !team.hasEntry(event.player.name)) {
+                team.addEntry(event.player.name)
+            }*/
         }
     }
 
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
-        // cache actions
     }
 
 }
