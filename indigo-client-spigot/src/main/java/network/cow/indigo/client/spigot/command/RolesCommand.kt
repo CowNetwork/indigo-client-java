@@ -6,20 +6,18 @@ import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.AddRolePermissionsRequest
 import network.cow.mooapis.indigo.v1.DeleteRoleRequest
-import network.cow.mooapis.indigo.v1.GetRoleRequest
-import network.cow.mooapis.indigo.v1.GetRoleResponse
 import network.cow.mooapis.indigo.v1.GetUserRolesRequest
 import network.cow.mooapis.indigo.v1.GetUserRolesResponse
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
 import network.cow.mooapis.indigo.v1.InsertRoleResponse
-import network.cow.mooapis.indigo.v1.ListRolesRequest
-import network.cow.mooapis.indigo.v1.ListRolesResponse
 import network.cow.mooapis.indigo.v1.RemoveRolePermissionsRequest
 import network.cow.mooapis.indigo.v1.Role
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
+import org.bukkit.util.StringUtil
+
 
 /**
  * @author Tobias Büser
@@ -76,29 +74,43 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     override fun onTabComplete(sender: CommandSender, cmd: Command, label: String, args: Array<out String>): MutableList<String> {
-        if (args.size > 2) {
+        val completions = mutableListOf<String>()
+
+        if (args.isEmpty()) {
             return mutableListOf()
         }
-        if (args.size == 2 && args[0].equals("permission", true)) {
-            val subCommands = mutableListOf("list", "add", "remove")
+        val subCommand = args[0]
 
-            val current = args[1]
-            if (current.isEmpty()) {
-                return subCommands
+        if (args.size == 1) {
+            val subCommands = mutableListOf("list", "info", "add", "delete", "permission")
+
+            StringUtil.copyPartialMatches(subCommand, subCommands, completions)
+        } else if (args.size == 2) {
+            when (subCommand) {
+                "permission" -> {
+                    val subCommands = mutableListOf("list", "add", "remove")
+
+                    StringUtil.copyPartialMatches(args[1], subCommands, completions)
+                }
+                "info", "delete" -> {
+                    val roles = plugin.roleCache.getRoles().map { it.id }
+
+                    StringUtil.copyPartialMatches(args[1], roles, completions)
+                }
             }
-            return subCommands.filter { it.startsWith(current) }.toMutableList()
-        }
-        if (args.size > 1) {
-            return mutableListOf()
+        } else if (args.size == 3 && subCommand == "permission") {
+            val subCommands = mutableListOf("list", "add", "remove")
+            if (!subCommands.contains(args[1])) {
+                return completions
+            }
+
+            val roles = plugin.roleCache.getRoles().map { it.id }
+
+            StringUtil.copyPartialMatches(args[2], roles, completions)
         }
 
-        val subCommands = mutableListOf("list", "info", "add", "delete", "permission")
-
-        val current = args[0]
-        if (current.isEmpty()) {
-            return subCommands
-        }
-        return subCommands.filter { it.startsWith(current) }.toMutableList()
+        completions.sort()
+        return completions
     }
 
     private fun sendUsage(sender: CommandSender) {
@@ -143,34 +155,25 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             return
         }
 
-        var response: ListRolesResponse? = null
-        val status = handleGrpc {
-            response = plugin.blockingStub.listRoles(ListRolesRequest.newBuilder().build())
-        }
-        if (!status.isOk()) {
-            status.handleCommandDefault(sender)
+        val rolesList = plugin.roleCache.getRoles()
+        if (rolesList.isEmpty()) {
+            sender.sendMessage("§cThere are no roles available.")
             return
         }
 
         sender.sendMessage("§aAvailable roles:")
-        response!!.rolesList.forEach {
+        rolesList.forEach {
             sender.sendMessage("§7- §f${it.id} (color: ${it.color})")
         }
     }
 
     private fun info(sender: CommandSender, name: String) {
-        var response: GetRoleResponse? = null
-        val status = handleGrpc {
-            response = plugin.blockingStub.getRole(GetRoleRequest.newBuilder().setRoleId(name).build())
-        }
-        if (!status.isOk()) {
-            status.handle(Status.Code.NOT_FOUND) {
-                sender.sendMessage("§cRole does not exist.")
-            }.handleCommandDefault(sender)
+        val role = plugin.roleCache.getRole(name)
+        if (role == null) {
+            sender.sendMessage("§cRole does not exist.")
             return
         }
 
-        val role = response!!.role
         sender.sendMessage("§aRole info of $name:")
         sender.sendMessage("§7- Priority: §f${role.priority}")
         sender.sendMessage("§7- Color: §f${role.color}")
@@ -179,6 +182,12 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     private fun add(sender: CommandSender, name: String) {
+        val role = plugin.roleCache.getRole(name)
+        if (role != null) {
+            sender.sendMessage("§cRole already exists.")
+            return
+        }
+
         var response: InsertRoleResponse? = null
         val status = handleGrpc {
             response = plugin.blockingStub.insertRole(
@@ -187,7 +196,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         }
         if (!status.isOk()) {
             status.handle(Status.Code.ALREADY_EXISTS) {
-                sender.sendMessage("§cRole already exists.")
+                sender.sendMessage("§4Service already knows this role.")
             }.handleCommandDefault(sender)
             return
         }
@@ -198,6 +207,12 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     private fun delete(sender: CommandSender, name: String) {
+        val role = plugin.roleCache.getRole(name)
+        if (role == null) {
+            sender.sendMessage("§cRole does not exist.")
+            return
+        }
+
         val status = handleGrpc {
             plugin.blockingStub.deleteRole(
                 DeleteRoleRequest.newBuilder()
@@ -207,7 +222,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         }
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
-                sender.sendMessage("§cRole does not exist.")
+                sender.sendMessage("§4Service could not find role.")
             }.handleCommandDefault(sender)
             return
         }
@@ -245,18 +260,12 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     private fun permissionList(sender: CommandSender, name: String) {
-        var response: GetRoleResponse? = null
-        val status = handleGrpc {
-            response = plugin.blockingStub.getRole(GetRoleRequest.newBuilder().setRoleId(name).build())
-        }
-        if (!status.isOk()) {
-            status.handle(Status.Code.NOT_FOUND) {
-                sender.sendMessage("§cRole does not exist.")
-            }.handleCommandDefault(sender)
+        val role = plugin.roleCache.getRole(name)
+        if (role == null) {
+            sender.sendMessage("§cRole does not exist.")
             return
         }
 
-        val role = response!!.role
         sender.sendMessage("§aPermission list of ${role.id}:")
         role.permissionsList.forEach {
             sender.sendMessage("§7- $it")
@@ -264,6 +273,16 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     private fun permissionAdd(sender: CommandSender, name: String, permission: String) {
+        val role = plugin.roleCache.getRole(name)
+        if (role == null) {
+            sender.sendMessage("§cRole does not exist.")
+            return
+        }
+        if (role.permissionsList.contains(permission)) {
+            sender.sendMessage("§cRole already has this permission.")
+            return
+        }
+
         val status = handleGrpc {
             plugin.blockingStub.addRolePermissions(
                 AddRolePermissionsRequest.newBuilder()
@@ -274,7 +293,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         }
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
-                sender.sendMessage("§cRole does not exist.")
+                sender.sendMessage("§4Service could not find role.")
             }.handleCommandDefault(sender)
             return
         }
@@ -283,6 +302,16 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     private fun permissionRemove(sender: CommandSender, name: String, permission: String) {
+        val role = plugin.roleCache.getRole(name)
+        if (role == null) {
+            sender.sendMessage("§cRole does not exist.")
+            return
+        }
+        if (!role.permissionsList.contains(permission)) {
+            sender.sendMessage("§cRole does not have this permission.")
+            return
+        }
+
         val status = handleGrpc {
             plugin.blockingStub.removeRolePermissions(
                 RemoveRolePermissionsRequest.newBuilder()
@@ -293,7 +322,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         }
         if (!status.isOk()) {
             status.handle(Status.Code.NOT_FOUND) {
-                sender.sendMessage("§cRole does not exist.")
+                sender.sendMessage("§4Service could not find role.")
             }.handleCommandDefault(sender)
             return
         }
