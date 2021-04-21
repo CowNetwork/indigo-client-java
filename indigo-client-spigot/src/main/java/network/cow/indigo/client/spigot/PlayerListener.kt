@@ -42,7 +42,8 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
                 return@runAsync
             }
 
-            val indigoUser = response!!.user
+            val indigoUser = response!!.user ?: return@runAsync
+
             plugin.roleCache.updateRolesAndFireEvent(*indigoUser.rolesList.toTypedArray())
 
             indigoUsers[uniqueId] = indigoUser
@@ -53,7 +54,7 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
             // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
             // create scoreboard team of role
             Bukkit.getScheduler().runTask(plugin, Runnable {
-                val role = indigoUser.rolesList.maxByOrNull { it.priority }!!
+                val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return@Runnable
                 val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
                 val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
 
@@ -69,7 +70,7 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
         val player = event.player
         val indigoUser = indigoUsers.remove(player.uniqueId) ?: return
 
-        val role = indigoUser.rolesList.maxByOrNull { it.priority }!!
+        val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return
         val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
         val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
 

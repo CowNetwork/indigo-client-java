@@ -1,6 +1,9 @@
 package network.cow.indigo.client.spigot
 
 import io.grpc.Status
+import network.cow.mooapis.indigo.v1.Role
+import network.cow.mooapis.indigo.v1.RoleIdentifier
+import network.cow.mooapis.indigo.v1.RoleNameIdentifier
 import org.bukkit.command.CommandSender
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -62,4 +65,25 @@ private val THREAD_POOL: ExecutorService = Executors.newFixedThreadPool(3)
 
 fun runAsync(exec: () -> Unit) {
     THREAD_POOL.execute(exec)
+}
+
+private const val ROLE_IDENTIFIER_TYPE = "minecraft"
+
+fun createRoleIdentifierOf(roleName: String): RoleIdentifier {
+    return RoleIdentifier.newBuilder().setNameId(
+        RoleNameIdentifier.newBuilder()
+            .setName(roleName)
+            .setType(ROLE_IDENTIFIER_TYPE)
+            .build()
+    ).build()
+}
+
+fun createRole(name: String): Role {
+    return Role.newBuilder()
+        .setName(name)
+        .setColor("")
+        .setPriority(0)
+        .setTransient(false)
+        .setType(ROLE_IDENTIFIER_TYPE)
+        .build()
 }

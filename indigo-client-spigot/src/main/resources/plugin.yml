@@ -1,5 +1,5 @@
 name: Indigo
-version: 0.1.0
+version: 0.4.0
 main: network.cow.indigo.client.spigot.IndigoPlugin
 author: Tobias B.
 api-version: 1.16

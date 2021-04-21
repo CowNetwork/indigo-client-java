@@ -18,6 +18,8 @@ class RoleCache(private val blockingStub: IndigoServiceGrpc.IndigoServiceBlockin
     /**
      * Map to cache the roles with. We need it thread-safe
      * as it will be accessible from multiple threads at the same time.
+     *
+     * Mapping from [Role.getName] to [Role].
      */
     private var rolesMap = ConcurrentHashMap<String, Role>()
 
@@ -61,7 +63,7 @@ class RoleCache(private val blockingStub: IndigoServiceGrpc.IndigoServiceBlockin
 
     fun getRoles() = rolesMap.values
 
-    fun getRole(id: String) = rolesMap[id]
+    fun getRole(name: String) = rolesMap[name]
 
     fun updateRolesAndFireEvent(vararg roles: Role) {
         val updateEntries = this.updateRoles(*roles)
@@ -88,8 +90,8 @@ class RoleCache(private val blockingStub: IndigoServiceGrpc.IndigoServiceBlockin
     }
 
     private fun updateRole(role: Role): RolesUpdateEvent.Action? {
-        val previousRole = rolesMap[role.id]
-        rolesMap[role.id] = role
+        val previousRole = rolesMap[role.name]
+        rolesMap[role.name] = role
 
         if (previousRole == null) {
             return RolesUpdateEvent.Action.ADD

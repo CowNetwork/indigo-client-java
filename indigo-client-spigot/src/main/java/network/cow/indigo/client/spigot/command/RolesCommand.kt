@@ -2,6 +2,8 @@ package network.cow.indigo.client.spigot.command
 
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
+import network.cow.indigo.client.spigot.createRole
+import network.cow.indigo.client.spigot.createRoleIdentifierOf
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.AddRolePermissionsRequest
@@ -11,7 +13,6 @@ import network.cow.mooapis.indigo.v1.GetUserRolesResponse
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
 import network.cow.mooapis.indigo.v1.InsertRoleResponse
 import network.cow.mooapis.indigo.v1.RemoveRolePermissionsRequest
-import network.cow.mooapis.indigo.v1.Role
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -93,7 +94,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
                     StringUtil.copyPartialMatches(args[1], subCommands, completions)
                 }
                 "info", "delete" -> {
-                    val roles = plugin.roleCache.getRoles().map { it.id }
+                    val roles = plugin.roleCache.getRoles().map { it.name }
 
                     StringUtil.copyPartialMatches(args[1], roles, completions)
                 }
@@ -104,7 +105,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
                 return completions
             }
 
-            val roles = plugin.roleCache.getRoles().map { it.id }
+            val roles = plugin.roleCache.getRoles().map { it.name }
 
             StringUtil.copyPartialMatches(args[2], roles, completions)
         }
@@ -191,7 +192,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         var response: InsertRoleResponse? = null
         val status = handleGrpc {
             response = plugin.blockingStub.insertRole(
-                InsertRoleRequest.newBuilder().setRole(Role.newBuilder().setId(name).build()).build()
+                InsertRoleRequest.newBuilder().setRole(createRole(name)).build()
             )
         }
         if (!status.isOk()) {
@@ -216,7 +217,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         val status = handleGrpc {
             plugin.blockingStub.deleteRole(
                 DeleteRoleRequest.newBuilder()
-                    .setRoleId(name)
+                    .setRoleId(createRoleIdentifierOf(name))
                     .build()
             )
         }
@@ -286,7 +287,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         val status = handleGrpc {
             plugin.blockingStub.addRolePermissions(
                 AddRolePermissionsRequest.newBuilder()
-                    .setRoleId(name)
+                    .setRoleId(createRoleIdentifierOf(name))
                     .addPermissions(permission)
                     .build()
             )
@@ -315,7 +316,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         val status = handleGrpc {
             plugin.blockingStub.removeRolePermissions(
                 RemoveRolePermissionsRequest.newBuilder()
-                    .setRoleId(name)
+                    .setRoleId(createRoleIdentifierOf(name))
                     .addPermissions(permission)
                     .build()
             )
