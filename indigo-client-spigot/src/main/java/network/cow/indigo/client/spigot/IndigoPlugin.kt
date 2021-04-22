@@ -33,7 +33,6 @@ class IndigoPlugin : JavaPlugin() {
             .build()
 
         this.blockingStub = IndigoServiceGrpc.newBlockingStub(channel)
-        this.asyncStub = IndigoServiceGrpc.newStub(channel)
 
         val rolesCommand = RolesCommand(this)
         this.getCommand("roles")?.setExecutor(rolesCommand)
