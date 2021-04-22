@@ -24,10 +24,8 @@ class IndigoPlugin : JavaPlugin() {
 
     private lateinit var channel: ManagedChannel
     lateinit var blockingStub: IndigoServiceGrpc.IndigoServiceBlockingStub
-    lateinit var asyncStub: IndigoServiceGrpc.IndigoServiceStub
 
     lateinit var roleCache: RoleCache
-    lateinit var cloudEventsService: CloudEventsService
 
     override fun onEnable() {
         this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
