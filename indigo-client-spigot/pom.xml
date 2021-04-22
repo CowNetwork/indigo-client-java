@@ -19,6 +19,12 @@
 
   <dependencies>
     <dependency>
+      <groupId>network.cow.indigo</groupId>
+      <artifactId>indigo-client-spigot-api</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.destroystokyo.paper</groupId>
       <artifactId>paper</artifactId>
       <version>1.16.5-R0.1-SNAPSHOT</version>
@@ -28,6 +34,13 @@
       <groupId>io.grpc</groupId>
       <artifactId>grpc-netty-shaded</artifactId>
       <version>1.36.0</version>
+    </dependency>
+
+    <!-- Cloud Events -->
+    <dependency>
+      <groupId>network.cow.cloudevents</groupId>
+      <artifactId>cloudevents-spigot</artifactId>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
 

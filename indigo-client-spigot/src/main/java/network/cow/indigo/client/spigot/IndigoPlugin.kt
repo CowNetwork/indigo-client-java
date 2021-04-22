@@ -5,8 +5,13 @@ import io.grpc.ManagedChannelBuilder
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
+import network.cow.cloudevents.CloudEventsService
+import network.cow.grape.Grape
 import network.cow.indigo.client.spigot.command.RolesCommand
+import network.cow.indigo.client.spigot.listener.CloudEventsListener
+import network.cow.indigo.client.spigot.listener.PlayerListener
 import network.cow.mooapis.indigo.v1.IndigoServiceGrpc
+import network.cow.mooapis.indigo.v1.RoleUpdateEvent
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.awt.Color
@@ -21,8 +26,8 @@ class IndigoPlugin : JavaPlugin() {
     lateinit var blockingStub: IndigoServiceGrpc.IndigoServiceBlockingStub
     lateinit var asyncStub: IndigoServiceGrpc.IndigoServiceStub
 
-    // TODO map from player to custom permissions
     lateinit var roleCache: RoleCache
+    lateinit var cloudEventsService: CloudEventsService
 
     override fun onEnable() {
         this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
@@ -38,8 +43,17 @@ class IndigoPlugin : JavaPlugin() {
         Bukkit.getPluginManager().registerEvents(PlayerListener(this), this)
 
         // load all roles and permission
-        roleCache = RoleCache(blockingStub, this)
-        roleCache.reloadFromService()
+        this.roleCache = RoleCache(blockingStub, this)
+        this.roleCache.reloadFromService()
+
+        // cloud events
+        val service = Grape.getInstance()[CloudEventsService::class.java].getNow(null)
+        if (service == null) {
+            logger.warning("Could not find CloudEventsService, disabling ..")
+            Bukkit.getPluginManager().disablePlugin(this)
+            return
+        }
+        service.consumer.listen("cow.indigo.v1.RoleUpdateEvent", RoleUpdateEvent::class.java, CloudEventsListener(this))
 
         // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
         roleCache.getRoles().forEach {
@@ -61,7 +75,11 @@ class IndigoPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
-        this.channel.shutdown().awaitTermination(2, TimeUnit.SECONDS)
+        try {
+            this.channel.shutdown().awaitTermination(2, TimeUnit.SECONDS)
+        } catch (ex: Exception) {
+            logger.info("Error during shutdown, ignoring ..")
+        }
     }
 
     private fun String.toColor() = Color(

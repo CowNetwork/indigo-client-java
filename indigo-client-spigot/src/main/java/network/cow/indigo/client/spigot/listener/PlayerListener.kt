@@ -1,8 +1,11 @@
-package network.cow.indigo.client.spigot
+package network.cow.indigo.client.spigot.listener
 
 import io.grpc.Status
+import network.cow.indigo.client.spigot.IndigoPlugin
+import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.permission.InjectedPermissibleBase
 import network.cow.indigo.client.spigot.permission.injectPermissibleBase
+import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.GetUserRequest
 import network.cow.mooapis.indigo.v1.GetUserResponse
 import network.cow.mooapis.indigo.v1.User
@@ -44,7 +47,7 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
 
             val indigoUser = response!!.user ?: return@runAsync
 
-            plugin.roleCache.updateRolesAndFireEvent(*indigoUser.rolesList.toTypedArray())
+            plugin.roleCache.updateRoles(*indigoUser.rolesList.toTypedArray())
 
             indigoUsers[uniqueId] = indigoUser
 

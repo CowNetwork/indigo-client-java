@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * @author Tobias Büser
  */
-class RoleCache(private val blockingStub: IndigoServiceGrpc.IndigoServiceBlockingStub, private val plugin: JavaPlugin) {
+class RoleCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub, private val plugin: JavaPlugin) {
 
     /**
      * Map to cache the roles with. We need it thread-safe
@@ -27,7 +27,7 @@ class RoleCache(private val blockingStub: IndigoServiceGrpc.IndigoServiceBlockin
         plugin.logger.info("Loading roles...")
         var response: ListRolesResponse? = null
         val status = handleGrpc {
-            response = this.blockingStub.listRoles(ListRolesRequest.newBuilder().build())
+            response = this.stub.listRoles(ListRolesRequest.newBuilder().build())
         }
         if (!status.isOk()) {
             status.handle(Status.Code.UNAVAILABLE) {
@@ -51,7 +51,7 @@ class RoleCache(private val blockingStub: IndigoServiceGrpc.IndigoServiceBlockin
         }
 
         this.rolesMap.clear()
-        updateEntries.addAll(this.updateRoles(*newRolesList.toTypedArray()))
+        updateEntries.addAll(this.updateRolesAndGetEventEntries(*newRolesList.toTypedArray()))
         if (updateEntries.isNotEmpty()) {
             Bukkit.getScheduler().runTask(plugin, Runnable {
                 Bukkit.getPluginManager().callEvent(RolesUpdateEvent(updateEntries))
@@ -65,18 +65,21 @@ class RoleCache(private val blockingStub: IndigoServiceGrpc.IndigoServiceBlockin
 
     fun getRole(name: String) = rolesMap[name]
 
-    fun updateRolesAndFireEvent(vararg roles: Role) {
-        val updateEntries = this.updateRoles(*roles)
+    fun deleteRole(name: String) {
+        val previousRole = rolesMap.remove(name) ?: return
+        Bukkit.getPluginManager().callEvent(RolesUpdateEvent(listOf(
+            RolesUpdateEvent.Entry(previousRole, RolesUpdateEvent.Action.REMOVE)
+        )))
+    }
+
+    fun updateRoles(vararg roles: Role) {
+        val updateEntries = this.updateRolesAndGetEventEntries(*roles)
         if (updateEntries.isNotEmpty()) {
             Bukkit.getPluginManager().callEvent(RolesUpdateEvent(updateEntries))
         }
     }
 
-    fun updateRolesSilently(vararg roles: Role) {
-        this.updateRoles(*roles)
-    }
-
-    private fun updateRoles(vararg roles: Role): List<RolesUpdateEvent.Entry> {
+    private fun updateRolesAndGetEventEntries(vararg roles: Role): List<RolesUpdateEvent.Entry> {
         val updateEntries = mutableListOf<RolesUpdateEvent.Entry>()
 
         roles.forEach {
