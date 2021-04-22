@@ -58,8 +58,6 @@ class IndigoPlugin : JavaPlugin() {
         // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
         roleCache.getRoles().forEach {
             val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
-            // TODO type=`minecraft` instead of having it inside the id
-            // -> the PRIMARY_KEY would be `type`+`id` then
             val teamName = "${it.priority}_${it.id.take(12)}"
 
             var team = scoreboard.getTeam(teamName)
