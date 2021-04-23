@@ -41,6 +41,7 @@
       <groupId>network.cow.cloudevents</groupId>
       <artifactId>cloudevents-spigot</artifactId>
       <version>1.0.0</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

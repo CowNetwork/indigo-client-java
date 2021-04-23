@@ -75,6 +75,14 @@ class RoleCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub, p
     fun updateRoles(vararg roles: Role) {
         val updateEntries = this.updateRolesAndGetEventEntries(*roles)
         if (updateEntries.isNotEmpty()) {
+            if (!Bukkit.isPrimaryThread()) {
+                Bukkit.getScheduler().runTask(plugin, object : Runnable {
+                    override fun run() {
+                        Bukkit.getPluginManager().callEvent(RolesUpdateEvent(updateEntries))
+                    }
+                })
+                return
+            }
             Bukkit.getPluginManager().callEvent(RolesUpdateEvent(updateEntries))
         }
     }
