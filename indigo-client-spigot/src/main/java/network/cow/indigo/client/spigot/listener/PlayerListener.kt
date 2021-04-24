@@ -30,7 +30,7 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
         runAsync {
             var response: GetUserResponse? = null
             val status = handleGrpc {
-                response = plugin.blockingStub.getUser(
+                response = plugin.stub.getUser(
                     GetUserRequest.newBuilder().setUserAccountId(uniqueId.toString()).build()
                 )
             }

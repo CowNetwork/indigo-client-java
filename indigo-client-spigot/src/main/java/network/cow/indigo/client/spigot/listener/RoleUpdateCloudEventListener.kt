@@ -6,7 +6,7 @@ import network.cow.mooapis.indigo.v1.RoleUpdateEvent
 /**
  * @author Tobias Büser
  */
-class CloudEventsListener(private val plugin: IndigoPlugin) : (RoleUpdateEvent) -> Unit {
+class RoleUpdateCloudEventListener(private val plugin: IndigoPlugin) : (RoleUpdateEvent) -> Unit {
     override fun invoke(event: RoleUpdateEvent) {
         val role = event.role ?: return
 

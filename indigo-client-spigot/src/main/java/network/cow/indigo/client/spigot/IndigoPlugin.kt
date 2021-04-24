@@ -8,8 +8,8 @@ import net.kyori.adventure.text.format.TextColor
 import network.cow.cloudevents.CloudEventsService
 import network.cow.grape.Grape
 import network.cow.indigo.client.spigot.command.RolesCommand
-import network.cow.indigo.client.spigot.listener.CloudEventsListener
 import network.cow.indigo.client.spigot.listener.PlayerListener
+import network.cow.indigo.client.spigot.listener.RoleUpdateCloudEventListener
 import network.cow.mooapis.indigo.v1.IndigoServiceGrpc
 import network.cow.mooapis.indigo.v1.RoleUpdateEvent
 import org.bukkit.Bukkit
@@ -23,22 +23,22 @@ import java.util.concurrent.TimeUnit
 class IndigoPlugin : JavaPlugin() {
 
     private lateinit var channel: ManagedChannel
-    lateinit var blockingStub: IndigoServiceGrpc.IndigoServiceBlockingStub
+    lateinit var stub: IndigoServiceGrpc.IndigoServiceBlockingStub
 
     lateinit var roleCache: RoleCache
     lateinit var indigoConfig: IndigoConfig
 
     override fun onEnable() {
         this.indigoConfig = IndigoConfig(
-            this.config.getString("defaultGroup"),
-            this.config.getBoolean("assignDefaultGroup")
+            this.config.getString("defaultRole"),
+            this.config.getBoolean("assignDefaultRole")
         )
 
         this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
             .usePlaintext()
             .build()
 
-        this.blockingStub = IndigoServiceGrpc.newBlockingStub(channel)
+        this.stub = IndigoServiceGrpc.newBlockingStub(channel)
 
         val rolesCommand = RolesCommand(this)
         this.getCommand("roles")?.setExecutor(rolesCommand)
@@ -46,8 +46,11 @@ class IndigoPlugin : JavaPlugin() {
         Bukkit.getPluginManager().registerEvents(PlayerListener(this), this)
 
         // load all roles and permission
-        this.roleCache = RoleCache(blockingStub, this)
+        this.roleCache = RoleCache(stub, this)
         this.roleCache.reloadFromService()
+        if (this.roleCache.getRole(this.indigoConfig.defaultRole) == null) {
+            logger.warning("Default role ${this.indigoConfig.defaultRole} does not exist.")
+        }
 
         // cloud events
         val service = Grape.getInstance()[CloudEventsService::class.java].getNow(null)
@@ -56,7 +59,7 @@ class IndigoPlugin : JavaPlugin() {
             Bukkit.getPluginManager().disablePlugin(this)
             return
         }
-        service.consumer.listen("cow.indigo.v1.RoleUpdateEvent", RoleUpdateEvent::class.java, CloudEventsListener(this))
+        service.consumer.listen("cow.indigo.v1.RoleUpdateEvent", RoleUpdateEvent::class.java, RoleUpdateCloudEventListener(this))
 
         // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
         roleCache.getRoles().forEach {

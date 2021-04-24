@@ -7,12 +7,16 @@ import network.cow.indigo.client.spigot.createRoleIdentifierOf
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.AddRolePermissionsRequest
+import network.cow.mooapis.indigo.v1.AddUserRolesRequest
 import network.cow.mooapis.indigo.v1.DeleteRoleRequest
 import network.cow.mooapis.indigo.v1.GetUserRolesRequest
 import network.cow.mooapis.indigo.v1.GetUserRolesResponse
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
 import network.cow.mooapis.indigo.v1.InsertRoleResponse
 import network.cow.mooapis.indigo.v1.RemoveRolePermissionsRequest
+import network.cow.mooapis.indigo.v1.RemoveUserRolesRequest
+import network.cow.mooapis.indigo.v1.RoleIdentifier
+import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -34,11 +38,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         runAsync {
             when (args[0]) {
                 "list" -> {
-                    if (args.size == 1) {
-                        list(sender, null)
-                    } else {
-                        list(sender, args[1])
-                    }
+                    list(sender)
                 }
                 "info" -> {
                     if (args.size == 1) {
@@ -47,9 +47,9 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
                     }
                     info(sender, args[1])
                 }
-                "add" -> {
+                "create" -> {
                     if (args.size == 1) {
-                        sender.sendMessage("§c/roles add <name>")
+                        sender.sendMessage("§c/roles create <name>")
                         return@runAsync
                     }
                     add(sender, args[1])
@@ -67,6 +67,27 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
                         return@runAsync
                     }
                     permission(sender, args.slice(1 until args.size))
+                }
+                "get" -> {
+                    if (args.size == 1) {
+                        sender.sendMessage("§c/roles get <player>")
+                        return@runAsync
+                    }
+                    get(sender, args[1])
+                }
+                "add" -> {
+                    if (args.size < 2) {
+                        sender.sendMessage("§c/roles add <player> <role>")
+                        return@runAsync
+                    }
+                    add(sender, args[1], args[2])
+                }
+                "remove" -> {
+                    if (args.size < 2) {
+                        sender.sendMessage("§c/roles remove <player> <role>")
+                        return@runAsync
+                    }
+                    remove(sender, args[1], args[2])
                 }
                 else -> sendUsage(sender)
             }
@@ -116,46 +137,26 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
 
     private fun sendUsage(sender: CommandSender) {
         sender.sendMessage("§cAvailable commands:")
-        sender.sendMessage("§7- /roles list [player]")
+        sender.sendMessage("§7- /roles list")
         sender.sendMessage("§7- /roles info <name>")
-        sender.sendMessage("§7- /roles add <name>")
+        sender.sendMessage("§7- /roles create <name>")
         sender.sendMessage("§7- /roles delete <name>")
         sender.sendMessage("§7- /roles permission list <name>")
         sender.sendMessage("§7- /roles permission add <name> <permission>")
         sender.sendMessage("§7- /roles permission remove <name> <permission>")
-        sender.sendMessage("§7- /roles assign <player> <role>")
-        sender.sendMessage("§7- /roles unassign <player> <role>")
+        sender.sendMessage("§7- /roles get <player>")
+        sender.sendMessage("§7- /roles add <player> <role>")
+        sender.sendMessage("§7- /roles remove <player> <role>")
     }
 
     private fun sendPermissionUsage(sender: CommandSender) {
         sender.sendMessage("§cAvailable sub commands:")
-        sender.sendMessage("§7- /roles permission list <name>")
-        sender.sendMessage("§7- /roles permission add <name> <permission>")
-        sender.sendMessage("§7- /roles permission remove <name> <permission>")
+        sender.sendMessage("§7- /roles permission list (<name>|@<player>)")
+        sender.sendMessage("§7- /roles permission add (<name>|@<player>) <permission>")
+        sender.sendMessage("§7- /roles permission remove (<name>|@<player>) <permission>")
     }
 
-    private fun list(sender: CommandSender, player: String?) {
-        if (player != null) {
-            var response: GetUserRolesResponse? = null
-            val status = handleGrpc {
-                response = plugin.blockingStub.getUserRoles(
-                    GetUserRolesRequest.newBuilder().setUserAccountId(player).build()
-                )
-            }
-            if (!status.isOk()) {
-                status.handle(Status.Code.NOT_FOUND) {
-                    sender.sendMessage("§cUser does not have any roles.")
-                }.handleCommandDefault(sender)
-                return
-            }
-
-            sender.sendMessage("§aUser has roles:")
-            response!!.rolesList.forEach {
-                sender.sendMessage("§7- §f${it.name} (priority: ${it.priority}, transient: ${it.transient})")
-            }
-            return
-        }
-
+    private fun list(sender: CommandSender) {
         val rolesList = plugin.roleCache.getRoles()
         if (rolesList.isEmpty()) {
             sender.sendMessage("§cThere are no roles available.")
@@ -191,7 +192,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
 
         var response: InsertRoleResponse? = null
         val status = handleGrpc {
-            response = plugin.blockingStub.insertRole(
+            response = plugin.stub.insertRole(
                 InsertRoleRequest.newBuilder().setRole(createRole(name)).build()
             )
         }
@@ -215,7 +216,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         }
 
         val status = handleGrpc {
-            plugin.blockingStub.deleteRole(
+            plugin.stub.deleteRole(
                 DeleteRoleRequest.newBuilder()
                     .setRoleId(createRoleIdentifierOf(name))
                     .build()
@@ -261,15 +262,23 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
     }
 
     private fun permissionList(sender: CommandSender, name: String) {
-        val role = plugin.roleCache.getRole(name)
-        if (role == null) {
-            sender.sendMessage("§cRole does not exist.")
-            return
+        val targetsUser = name.startsWith("@")
+        var usableName = name
+        if (targetsUser) {
+            usableName = name.drop(1)
         }
 
-        sender.sendMessage("§aPermission list of ${role.name}:")
-        role.permissionsList.forEach {
-            sender.sendMessage("§7- $it")
+        if (!targetsUser) {
+            val role = plugin.roleCache.getRole(usableName)
+            if (role == null) {
+                sender.sendMessage("§cRole does not exist.")
+                return
+            }
+
+            sender.sendMessage("§aPermission list of ${role.name}:")
+            role.permissionsList.forEach {
+                sender.sendMessage("§7- $it")
+            }
         }
     }
 
@@ -285,7 +294,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         }
 
         val status = handleGrpc {
-            plugin.blockingStub.addRolePermissions(
+            plugin.stub.addRolePermissions(
                 AddRolePermissionsRequest.newBuilder()
                     .setRoleId(createRoleIdentifierOf(name))
                     .addPermissions(permission)
@@ -314,7 +323,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         }
 
         val status = handleGrpc {
-            plugin.blockingStub.removeRolePermissions(
+            plugin.stub.removeRolePermissions(
                 RemoveRolePermissionsRequest.newBuilder()
                     .setRoleId(createRoleIdentifierOf(name))
                     .addPermissions(permission)
@@ -331,5 +340,88 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
         sender.sendMessage("§aPermission removed.")
     }
 
+    private fun get(sender: CommandSender, playerName: String) {
+        val player = Bukkit.getPlayer(playerName)
+        if (player == null) {
+            sender.sendMessage("§cThis player is not online!")
+            return
+        }
+
+        var response: GetUserRolesResponse? = null
+        val status = handleGrpc {
+            response = plugin.stub.getUserRoles(
+                GetUserRolesRequest.newBuilder().setUserAccountId(player.uniqueId.toString()).build()
+            )
+        }
+        if (!status.isOk()) {
+            status.handle(Status.Code.NOT_FOUND) {
+                sender.sendMessage("§cUser does not have any roles.")
+            }.handleCommandDefault(sender)
+            return
+        }
+
+        sender.sendMessage("§aUser has roles:")
+        response!!.rolesList.forEach {
+            sender.sendMessage("§7- §f${it.name} (priority: ${it.priority}, transient: ${it.transient})")
+        }
+    }
+
+    private fun add(sender: CommandSender, playerName: String, roleName: String) {
+        val player = Bukkit.getPlayer(playerName)
+        if (player == null) {
+            sender.sendMessage("§cThis player is not online!")
+            return
+        }
+
+        val role = plugin.roleCache.getRole(roleName)
+        if (role == null) {
+            sender.sendMessage("§cRole does not exist.")
+            return
+        }
+
+        // TODO check if player already has role
+        val status = handleGrpc {
+            plugin.stub.addUserRoles(
+                AddUserRolesRequest.newBuilder()
+                    .setUserAccountId(player.uniqueId.toString())
+                    .addRoleIds(RoleIdentifier.newBuilder().setUuid(role.id).build())
+                    .build()
+            )
+        }
+        if (!status.isOk()) {
+            status.handleCommandDefault(sender)
+            return
+        }
+        sender.sendMessage("§aRole added.")
+    }
+
+    private fun remove(sender: CommandSender, playerName: String, roleName: String) {
+        val player = Bukkit.getPlayer(playerName)
+        if (player == null) {
+            sender.sendMessage("§cThis player is not online!")
+            return
+        }
+
+        val role = plugin.roleCache.getRole(roleName)
+        if (role == null) {
+            sender.sendMessage("§cRole does not exist.")
+            return
+        }
+
+        // TODO check if player does not have role
+        val status = handleGrpc {
+            plugin.stub.removeUserRoles(
+                RemoveUserRolesRequest.newBuilder()
+                    .setUserAccountId(player.uniqueId.toString())
+                    .addRoleIds(RoleIdentifier.newBuilder().setUuid(role.id).build())
+                    .build()
+            )
+        }
+        if (!status.isOk()) {
+            status.handleCommandDefault(sender)
+            return
+        }
+        sender.sendMessage("§aRole removed.")
+    }
 
 }

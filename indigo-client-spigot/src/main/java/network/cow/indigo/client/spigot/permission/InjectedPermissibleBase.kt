@@ -49,6 +49,7 @@ class InjectedPermissibleBase(private val player: Player, private val indigoUser
 
 }
 
+// TODO adjust method so that priority/transience get used as well
 fun User.getAllPermissions(): List<String> {
     val list = mutableListOf<String>()
 
