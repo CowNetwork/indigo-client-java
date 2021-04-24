@@ -151,7 +151,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
 
             sender.sendMessage("§aUser has roles:")
             response!!.rolesList.forEach {
-                sender.sendMessage("§7- §f${it.id} (color: ${it.color})")
+                sender.sendMessage("§7- §f${it.name} (priority: ${it.priority}, transient: ${it.transient})")
             }
             return
         }
@@ -164,7 +164,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
 
         sender.sendMessage("§aAvailable roles:")
         rolesList.forEach {
-            sender.sendMessage("§7- §f${it.id} (color: ${it.color})")
+            sender.sendMessage("§7- §f${it.name} [${it.id.take(8)}] (color: ${it.color})")
         }
     }
 
@@ -175,7 +175,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             return
         }
 
-        sender.sendMessage("§aRole info of $name:")
+        sender.sendMessage("§aRole info of ${role.name}:")
         sender.sendMessage("§7- Priority: §f${role.priority}")
         sender.sendMessage("§7- Color: §f${role.color}")
         sender.sendMessage("§7- Transient: §f${role.transient}")
@@ -267,7 +267,7 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             return
         }
 
-        sender.sendMessage("§aPermission list of ${role.id}:")
+        sender.sendMessage("§aPermission list of ${role.name}:")
         role.permissionsList.forEach {
             sender.sendMessage("§7- $it")
         }
