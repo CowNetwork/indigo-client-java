@@ -67,23 +67,17 @@ class RoleCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub, p
 
     fun deleteRole(name: String) {
         val previousRole = rolesMap.remove(name) ?: return
-        Bukkit.getPluginManager().callEvent(RolesUpdateEvent(listOf(
+
+        val updateEntries = listOf(
             RolesUpdateEvent.Entry(previousRole, RolesUpdateEvent.Action.REMOVE)
-        )))
+        )
+        callEvent(plugin, RolesUpdateEvent(updateEntries))
     }
 
     fun updateRoles(vararg roles: Role) {
         val updateEntries = this.updateRolesAndGetEventEntries(*roles)
         if (updateEntries.isNotEmpty()) {
-            if (!Bukkit.isPrimaryThread()) {
-                Bukkit.getScheduler().runTask(plugin, object : Runnable {
-                    override fun run() {
-                        Bukkit.getPluginManager().callEvent(RolesUpdateEvent(updateEntries))
-                    }
-                })
-                return
-            }
-            Bukkit.getPluginManager().callEvent(RolesUpdateEvent(updateEntries))
+            callEvent(plugin, RolesUpdateEvent(updateEntries))
         }
     }
 
