@@ -26,8 +26,14 @@ class IndigoPlugin : JavaPlugin() {
     lateinit var blockingStub: IndigoServiceGrpc.IndigoServiceBlockingStub
 
     lateinit var roleCache: RoleCache
+    lateinit var indigoConfig: IndigoConfig
 
     override fun onEnable() {
+        this.indigoConfig = IndigoConfig(
+            this.config.getString("defaultGroup"),
+            this.config.getBoolean("assignDefaultGroup")
+        )
+
         this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
             .usePlaintext()
             .build()

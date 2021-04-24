@@ -45,9 +45,18 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
                 return@runAsync
             }
 
-            val indigoUser = response!!.user ?: return@runAsync
+            var indigoUser = response!!.user
+            if (indigoUser == null && plugin.indigoConfig.assignDefaultRole) {
+                val defaultRoleName = plugin.indigoConfig.defaultRole ?: return@runAsync
+                val defaultRole = plugin.roleCache.getRole(defaultRoleName) ?: return@runAsync
 
-            plugin.roleCache.updateRoles(*indigoUser.rolesList.toTypedArray())
+                indigoUser = User.newBuilder()
+                    .setAccountId(uniqueId.toString())
+                    .addRoles(defaultRole)
+                    .build()
+            } else {
+                plugin.roleCache.updateRoles(*indigoUser.rolesList.toTypedArray())
+            }
 
             indigoUsers[uniqueId] = indigoUser
 
