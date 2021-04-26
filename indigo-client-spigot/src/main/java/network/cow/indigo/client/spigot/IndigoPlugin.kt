@@ -2,11 +2,11 @@ package network.cow.indigo.client.spigot
 
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextColor
 import network.cow.cloudevents.CloudEventsService
 import network.cow.grape.Grape
+import network.cow.indigo.client.spigot.api.IndigoService
+import network.cow.indigo.client.spigot.cache.RoleCache
+import network.cow.indigo.client.spigot.cache.UserCache
 import network.cow.indigo.client.spigot.command.RolesCommand
 import network.cow.indigo.client.spigot.listener.PlayerListener
 import network.cow.indigo.client.spigot.listener.RoleUpdateCloudEventListener
@@ -26,6 +26,7 @@ class IndigoPlugin : JavaPlugin() {
     lateinit var stub: IndigoServiceGrpc.IndigoServiceBlockingStub
 
     lateinit var roleCache: RoleCache
+    lateinit var userCache: UserCache
     lateinit var indigoConfig: IndigoConfig
 
     override fun onEnable() {
@@ -51,6 +52,7 @@ class IndigoPlugin : JavaPlugin() {
         if (this.roleCache.getRole(this.indigoConfig.defaultRole) == null) {
             logger.warning("Default role ${this.indigoConfig.defaultRole} does not exist.")
         }
+        this.userCache = UserCache(stub, this)
 
         // cloud events
         val service = Grape.getInstance()[CloudEventsService::class.java].getNow(null)
@@ -61,8 +63,10 @@ class IndigoPlugin : JavaPlugin() {
         }
         service.consumer.listen("cow.indigo.v1.RoleUpdateEvent", RoleUpdateEvent::class.java, RoleUpdateCloudEventListener(this))
 
+        Grape.getInstance().register(IndigoService::class.java, SimpleIndigoService(this))
+
         // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
-        roleCache.getRoles().forEach {
+        /*roleCache.getRoles().forEach {
             val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
             val teamName = "${it.priority}_${it.id.take(12)}"
 
@@ -75,7 +79,7 @@ class IndigoPlugin : JavaPlugin() {
 
             team.color(NamedTextColor.GRAY)
             team.prefix(Component.text(it.id + " ", bukkitColor))
-        }
+        }*/
     }
 
     override fun onDisable() {

@@ -1,6 +1,5 @@
-package network.cow.indigo.client.spigot
+package network.cow.indigo.client.spigot.api
 
-import network.cow.indigo.client.spigot.permission.PermissionList
 import network.cow.mooapis.indigo.v1.Role
 import network.cow.mooapis.indigo.v1.User
 
@@ -49,5 +48,9 @@ class IndigoUser(private val user: User) {
      * their priority descending.
      */
     fun getTransientRoles() = user.rolesList.filter { it.transient }.sortedByDescending { it.priority }
+
+    fun hasPermission(perm: String) = this.permissions.hasPermission(perm)
+
+    fun getRoles(): List<Role> = this.user.rolesList
 
 }

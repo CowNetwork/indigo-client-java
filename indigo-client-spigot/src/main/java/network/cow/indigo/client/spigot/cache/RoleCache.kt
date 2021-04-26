@@ -1,7 +1,9 @@
-package network.cow.indigo.client.spigot
+package network.cow.indigo.client.spigot.cache
 
 import io.grpc.Status
+import network.cow.indigo.client.spigot.callEvent
 import network.cow.indigo.client.spigot.event.RolesUpdateEvent
+import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.mooapis.indigo.v1.IndigoServiceGrpc
 import network.cow.mooapis.indigo.v1.ListRolesRequest
 import network.cow.mooapis.indigo.v1.ListRolesResponse

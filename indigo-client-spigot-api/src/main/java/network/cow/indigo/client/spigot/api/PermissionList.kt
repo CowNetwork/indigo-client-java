@@ -1,4 +1,4 @@
-package network.cow.indigo.client.spigot.permission
+package network.cow.indigo.client.spigot.api
 
 private val PERM_REGEX = Regex("^-?(?:\\w+|\\*)(?:\\.(\\w+|\\*))*\$")
 

@@ -1,5 +1,6 @@
 package network.cow.indigo.client.spigot.permission
 
+import network.cow.indigo.client.spigot.api.IndigoUser
 import network.cow.mooapis.indigo.v1.User
 import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissibleBase
@@ -9,10 +10,10 @@ import org.bukkit.permissions.PermissionAttachmentInfo
 /**
  * @author Tobias Büser
  */
-class InjectedPermissibleBase(private val player: Player, private val indigoUser: User) : PermissibleBase(player) {
+class InjectedPermissibleBase(private val player: Player, private val indigoUser: IndigoUser) : PermissibleBase(player) {
 
     override fun isPermissionSet(name: String): Boolean {
-        val list = this.indigoUser.getAllPermissions()
+        val list = this.indigoUser.permissions
         return list.contains(name)
     }
 
@@ -21,8 +22,7 @@ class InjectedPermissibleBase(private val player: Player, private val indigoUser
     }
 
     override fun hasPermission(inName: String): Boolean {
-        val permList = PermissionList(this.indigoUser.getAllPermissions())
-        return permList.hasPermission(inName)
+        return indigoUser.permissions.hasPermission(inName)
     }
 
     override fun hasPermission(perm: Permission): Boolean {
@@ -36,7 +36,7 @@ class InjectedPermissibleBase(private val player: Player, private val indigoUser
     override fun getEffectivePermissions(): MutableSet<PermissionAttachmentInfo> {
         val permissionAttachments = mutableSetOf<PermissionAttachmentInfo>()
 
-        val list = this.indigoUser.getAllPermissions()
+        val list = this.indigoUser.permissions
         list.forEach {
             permissionAttachments.add(PermissionAttachmentInfo(this, it, null, true))
         }

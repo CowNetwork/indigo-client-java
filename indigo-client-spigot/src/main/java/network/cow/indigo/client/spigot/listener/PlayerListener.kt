@@ -2,6 +2,7 @@ package network.cow.indigo.client.spigot.listener
 
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
+import network.cow.indigo.client.spigot.api.IndigoUser
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.permission.InjectedPermissibleBase
 import network.cow.indigo.client.spigot.permission.injectPermissibleBase
@@ -9,19 +10,15 @@ import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.GetUserRequest
 import network.cow.mooapis.indigo.v1.GetUserResponse
 import network.cow.mooapis.indigo.v1.User
-import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import java.util.UUID
 
 /**
  * @author Tobias Büser
  */
 class PlayerListener(private val plugin: IndigoPlugin) : Listener {
-
-    private val indigoUsers = mutableMapOf<UUID, User>()
 
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
@@ -45,27 +42,28 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
                 return@runAsync
             }
 
-            var indigoUser = response!!.user
-            if (indigoUser == null && plugin.indigoConfig.assignDefaultRole) {
+            var user = response!!.user
+            if (user == null && plugin.indigoConfig.assignDefaultRole) {
                 val defaultRoleName = plugin.indigoConfig.defaultRole ?: return@runAsync
                 val defaultRole = plugin.roleCache.getRole(defaultRoleName) ?: return@runAsync
 
-                indigoUser = User.newBuilder()
+                user = User.newBuilder()
                     .setAccountId(uniqueId.toString())
                     .addRoles(defaultRole)
                     .build()
             } else {
-                plugin.roleCache.updateRoles(*indigoUser.rolesList.toTypedArray())
+                plugin.roleCache.updateRoles(*user.rolesList.toTypedArray())
             }
 
-            indigoUsers[uniqueId] = indigoUser
+            val indigoUser = IndigoUser(user)
+            plugin.userCache.store(uniqueId, indigoUser)
 
             injectPermissibleBase(event.player, InjectedPermissibleBase(event.player, indigoUser))
             event.player.updateCommands()
 
             // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
             // create scoreboard team of role
-            Bukkit.getScheduler().runTask(plugin, Runnable {
+            /*Bukkit.getScheduler().runTask(plugin, Runnable {
                 val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return@Runnable
                 val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
                 val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
@@ -73,22 +71,22 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
                 if (team != null && !team.hasEntry(event.player.name)) {
                     team.addEntry(event.player.name)
                 }
-            })
+            })*/
         }
     }
 
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
         val player = event.player
-        val indigoUser = indigoUsers.remove(player.uniqueId) ?: return
+        plugin.userCache.invalidate(player.uniqueId)
 
-        val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return
+        /*val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return
         val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
         val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
 
         if (team != null && team.hasEntry(event.player.name)) {
             team.removeEntry(event.player.name)
-        }
+        }*/
     }
 
 }
