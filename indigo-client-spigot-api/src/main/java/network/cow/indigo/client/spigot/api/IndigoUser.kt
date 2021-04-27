@@ -9,6 +9,7 @@ import network.cow.mooapis.indigo.v1.User
 class IndigoUser(private val user: User) {
 
     val permissions: PermissionList
+    val roles: List<Role>; get() = this.user.rolesList
 
     init {
         var prevPriority = 0
@@ -51,6 +52,6 @@ class IndigoUser(private val user: User) {
 
     fun hasPermission(perm: String) = this.permissions.hasPermission(perm)
 
-    fun getRoles(): List<Role> = this.user.rolesList
+    fun hasRole(roleName: String) = this.roles.find { it.name == roleName } != null
 
 }

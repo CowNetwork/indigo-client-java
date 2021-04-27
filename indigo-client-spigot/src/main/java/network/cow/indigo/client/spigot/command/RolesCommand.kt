@@ -9,8 +9,6 @@ import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.AddRolePermissionsRequest
 import network.cow.mooapis.indigo.v1.AddUserRolesRequest
 import network.cow.mooapis.indigo.v1.DeleteRoleRequest
-import network.cow.mooapis.indigo.v1.GetUserRolesRequest
-import network.cow.mooapis.indigo.v1.GetUserRolesResponse
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
 import network.cow.mooapis.indigo.v1.InsertRoleResponse
 import network.cow.mooapis.indigo.v1.RemoveRolePermissionsRequest
@@ -347,21 +345,20 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             return
         }
 
-        var response: GetUserRolesResponse? = null
-        val status = handleGrpc {
-            response = plugin.stub.getUserRoles(
-                GetUserRolesRequest.newBuilder().setUserAccountId(player.uniqueId.toString()).build()
-            )
+        val indigoUser = plugin.userCache.getUser(player.uniqueId)
+        if (indigoUser == null) {
+            sender.sendMessage("§cThis player does not have any roles.")
+            return
         }
-        if (!status.isOk()) {
-            status.handle(Status.Code.NOT_FOUND) {
-                sender.sendMessage("§cUser does not have any roles.")
-            }.handleCommandDefault(sender)
+
+        val roles = indigoUser.roles
+        if (roles.isEmpty()) {
+            sender.sendMessage("§cThis player does not have any roles.")
             return
         }
 
         sender.sendMessage("§aUser has roles:")
-        response!!.rolesList.forEach {
+        roles.forEach {
             sender.sendMessage("§7- §f${it.name} (priority: ${it.priority}, transient: ${it.transient})")
         }
     }
@@ -379,7 +376,12 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             return
         }
 
-        // TODO check if player already has role
+        val indigoUser = plugin.userCache.getUser(player.uniqueId)
+        if (indigoUser != null && indigoUser.hasRole(roleName)) {
+            sender.sendMessage("§cThis player already has this role.")
+            return
+        }
+
         val status = handleGrpc {
             plugin.stub.addUserRoles(
                 AddUserRolesRequest.newBuilder()
@@ -408,7 +410,12 @@ class RolesCommand(private val plugin: IndigoPlugin) : CommandExecutor, TabCompl
             return
         }
 
-        // TODO check if player does not have role
+        val indigoUser = plugin.userCache.getUser(player.uniqueId)
+        if (indigoUser != null && !indigoUser.hasRole(roleName)) {
+            sender.sendMessage("§cThis player does not have this role.")
+            return
+        }
+
         val status = handleGrpc {
             plugin.stub.removeUserRoles(
                 RemoveUserRolesRequest.newBuilder()
