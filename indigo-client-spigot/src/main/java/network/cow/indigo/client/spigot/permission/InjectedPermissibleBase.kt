@@ -1,7 +1,6 @@
 package network.cow.indigo.client.spigot.permission
 
 import network.cow.indigo.client.spigot.api.IndigoUser
-import network.cow.mooapis.indigo.v1.User
 import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissibleBase
 import org.bukkit.permissions.Permission
@@ -10,7 +9,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo
 /**
  * @author Tobias Büser
  */
-class InjectedPermissibleBase(private val player: Player, private val indigoUser: IndigoUser) : PermissibleBase(player) {
+class InjectedPermissibleBase(player: Player, private val indigoUser: IndigoUser) : PermissibleBase(player) {
 
     override fun isPermissionSet(name: String): Boolean {
         val list = this.indigoUser.permissions
@@ -22,7 +21,7 @@ class InjectedPermissibleBase(private val player: Player, private val indigoUser
     }
 
     override fun hasPermission(inName: String): Boolean {
-        return indigoUser.permissions.hasPermission(inName)
+        return indigoUser.hasPermission(inName)
     }
 
     override fun hasPermission(perm: Permission): Boolean {
@@ -47,17 +46,4 @@ class InjectedPermissibleBase(private val player: Player, private val indigoUser
         // do nothing
     }
 
-}
-
-// TODO adjust method so that priority/transience get used as well
-fun User.getAllPermissions(): List<String> {
-    val list = mutableListOf<String>()
-
-    this.customPermissionsList.forEach { list.add(it) }
-    this.rolesList.forEach { role ->
-        role.permissionsList.forEach {
-            list.add(it)
-        }
-    }
-    return list
 }

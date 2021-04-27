@@ -8,25 +8,11 @@ import network.cow.mooapis.indigo.v1.User
  */
 class IndigoUser(private val user: User) {
 
-    val permissions: PermissionList
+    lateinit var permissions: PermissionList
     val roles: List<Role>; get() = this.user.rolesList
 
     init {
-        var prevPriority = 0
-        var permissionList = PermissionList(listOf())
-        this.user.rolesList.forEach { role ->
-            val rolePermissionList = PermissionList(role.permissionsList)
-            val superior = role.priority > prevPriority
-
-            permissionList = permissionList.mergeWith(rolePermissionList, superior)
-
-            prevPriority = role.priority
-        }
-
-        val customPermissionList = PermissionList(user.customPermissionsList)
-        permissionList = permissionList.mergeWith(customPermissionList, true)
-
-        this.permissions = permissionList.compacted()
+        this.reloadPermissionList()
     }
 
     /**
@@ -53,5 +39,41 @@ class IndigoUser(private val user: User) {
     fun hasPermission(perm: String) = this.permissions.hasPermission(perm)
 
     fun hasRole(roleName: String) = this.roles.find { it.name == roleName } != null
+
+    fun setCustomPermissions(permissions: List<String>) {
+        user.customPermissionsList.clear()
+        user.customPermissionsList.addAll(permissions)
+
+        this.reloadPermissionList()
+    }
+
+    fun setRoles(roles: List<Role>) {
+        user.rolesList.clear()
+        user.rolesList.addAll(roles)
+
+        this.reloadPermissionList()
+    }
+
+    /**
+     * Reloads the [permissions] list by using the backed [user]'s
+     * roles and custom permissions.
+     */
+    private fun reloadPermissionList() {
+        var prevPriority = 0
+        var permissionList = PermissionList(listOf())
+        this.user.rolesList.forEach { role ->
+            val rolePermissionList = PermissionList(role.permissionsList)
+            val superior = role.priority > prevPriority
+
+            permissionList = permissionList.mergeWith(rolePermissionList, superior)
+
+            prevPriority = role.priority
+        }
+
+        val customPermissionList = PermissionList(user.customPermissionsList)
+        permissionList = permissionList.mergeWith(customPermissionList, true)
+
+        this.permissions = permissionList.compacted()
+    }
 
 }

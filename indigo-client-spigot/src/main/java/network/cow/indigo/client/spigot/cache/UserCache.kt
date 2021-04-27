@@ -39,4 +39,5 @@ class UserCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub, p
 
     fun invalidate(uuid: UUID) = userMap.remove(uuid)
 
+    
 }

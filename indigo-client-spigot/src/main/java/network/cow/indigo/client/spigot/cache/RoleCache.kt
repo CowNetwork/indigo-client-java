@@ -67,6 +67,8 @@ class RoleCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub, p
 
     fun getRole(name: String?) = rolesMap[name]
 
+    fun getRoleByUuid(uuid: String) = rolesMap.values.find { it.id == uuid }
+
     fun deleteRole(name: String) {
         val previousRole = rolesMap.remove(name) ?: return
 

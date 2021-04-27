@@ -10,8 +10,10 @@ import network.cow.indigo.client.spigot.cache.UserCache
 import network.cow.indigo.client.spigot.command.RolesCommand
 import network.cow.indigo.client.spigot.listener.PlayerListener
 import network.cow.indigo.client.spigot.listener.RoleUpdateCloudEventListener
+import network.cow.indigo.client.spigot.listener.UserPermissionUpdateCloudEventListener
 import network.cow.mooapis.indigo.v1.IndigoServiceGrpc
 import network.cow.mooapis.indigo.v1.RoleUpdateEvent
+import network.cow.mooapis.indigo.v1.UserPermissionUpdateEvent
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.awt.Color
@@ -61,7 +63,16 @@ class IndigoPlugin : JavaPlugin() {
             Bukkit.getPluginManager().disablePlugin(this)
             return
         }
-        service.consumer.listen("cow.indigo.v1.RoleUpdateEvent", RoleUpdateEvent::class.java, RoleUpdateCloudEventListener(this))
+        service.consumer.listen(
+            "cow.indigo.v1.RoleUpdateEvent",
+            RoleUpdateEvent::class.java,
+            RoleUpdateCloudEventListener(this)
+        )
+        service.consumer.listen(
+            "cow.indigo.v1.UserPermissionUpdateEvent",
+            UserPermissionUpdateEvent::class.java,
+            UserPermissionUpdateCloudEventListener(this)
+        )
 
         Grape.getInstance().register(IndigoService::class.java, SimpleIndigoService(this))
 
