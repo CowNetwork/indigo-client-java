@@ -1,17 +1,17 @@
-package network.cow.indigo.client.spigot.command
+package network.cow.indigo.client.spigot.cowmand
 
 import org.bukkit.command.CommandSender
 
 /**
  * @author Tobias Büser
  */
-abstract class SupCommand {
+abstract class Cowmand {
 
     abstract val label: String
 
     open val aliases = listOf<String>()
     open val usage = ""
-    open val subCommands = listOf<SupCommand>()
+    open val subCommands = listOf<Cowmand>()
     open val permission = ""
 
     /**
@@ -26,28 +26,40 @@ abstract class SupCommand {
 
     inner class Executor(val sender: CommandSender, val args: Arguments) {
 
-        fun execute() {
+        fun execute() = traverse({ command, args ->
+            command.execute(sender, args)
+        }, {
+            sender.sendMessage("§cNo permission dude.")
+        })
+
+        fun tabComplete(): List<String> {
+            var list: List<String> = emptyList()
+
+            traverse({ cmd, args -> list = cmd.tabComplete(sender, args) }, {})
+            return list
+        }
+
+        private fun traverse(apply: (Cowmand, Arguments) -> Unit, error: () -> Unit) {
             if (permission.isNotEmpty() && !sender.hasPermission(permission)) {
-                sender.sendMessage("§cNo permission dude.")
+                error()
                 return
             }
 
-            if (args.isEmpty()) {
-                execute(sender, args)
-                return
-            }
-            if (subCommands.isEmpty()) {
-                execute(sender, args)
+            if (args.isEmpty() || subCommands.isEmpty()) {
+                apply(this@Cowmand, args)
                 return
             }
 
             val arg = args[0]!!.toLowerCase()
             subCommands.forEach {
                 if (it.label == arg || it.aliases.contains(arg)) {
-                    it.execute(sender, args.slice(1))
-                    return@execute
+                    it.Executor(sender, args.slice(1)).traverse(apply, error)
+                    return@traverse
                 }
             }
+
+            // subcommand not found
+            apply(this@Cowmand, args)
         }
 
     }

@@ -2,6 +2,8 @@ package network.cow.indigo.client.spigot.command
 
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
+import network.cow.indigo.client.spigot.cowmand.Arguments
+import network.cow.indigo.client.spigot.cowmand.Cowmand
 import network.cow.indigo.client.spigot.createRole
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
@@ -11,7 +13,7 @@ import org.bukkit.command.CommandSender
 /**
  * @author Tobias Büser
  */
-class RolesCreateCommand(val plugin: IndigoPlugin) : SupCommand() {
+class RolesCreateCommand(val plugin: IndigoPlugin) : Cowmand() {
 
     override val label = "create"
     override val usage = "<name>"

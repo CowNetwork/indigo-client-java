@@ -2,6 +2,8 @@ package network.cow.indigo.client.spigot.command
 
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
+import network.cow.indigo.client.spigot.cowmand.Arguments
+import network.cow.indigo.client.spigot.cowmand.Cowmand
 import network.cow.indigo.client.spigot.createRoleIdentifierOf
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.mooapis.indigo.v1.DeleteRoleRequest
@@ -10,7 +12,7 @@ import org.bukkit.command.CommandSender
 /**
  * @author Tobias Büser
  */
-class RolesDeleteCommand(val plugin: IndigoPlugin) : SupCommand() {
+class RolesDeleteCommand(val plugin: IndigoPlugin) : Cowmand() {
 
     override val label = "delete"
     override val usage = "<name>"

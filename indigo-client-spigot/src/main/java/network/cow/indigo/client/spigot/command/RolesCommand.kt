@@ -1,12 +1,14 @@
 package network.cow.indigo.client.spigot.command
 
 import network.cow.indigo.client.spigot.IndigoPlugin
+import network.cow.indigo.client.spigot.cowmand.Arguments
+import network.cow.indigo.client.spigot.cowmand.Cowmand
 import org.bukkit.command.CommandSender
 
 /**
  * @author Tobias Büser
  */
-class RolesCommand(val plugin: IndigoPlugin) : SupCommand() {
+class RolesCommand(val plugin: IndigoPlugin) : Cowmand() {
 
     override val label = "roles"
     override val aliases = listOf("cock", "assbitch")
