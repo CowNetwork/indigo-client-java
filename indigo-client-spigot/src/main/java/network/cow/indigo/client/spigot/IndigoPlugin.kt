@@ -8,6 +8,7 @@ import network.cow.indigo.client.spigot.api.IndigoService
 import network.cow.indigo.client.spigot.cache.RoleCache
 import network.cow.indigo.client.spigot.cache.UserCache
 import network.cow.indigo.client.spigot.command.RolesCommand
+import network.cow.indigo.client.spigot.command.SupCommandExecutor
 import network.cow.indigo.client.spigot.listener.PlayerListener
 import network.cow.indigo.client.spigot.listener.RoleUpdateCloudEventListener
 import network.cow.indigo.client.spigot.listener.UserPermissionUpdateCloudEventListener
@@ -43,7 +44,7 @@ class IndigoPlugin : JavaPlugin() {
 
         this.stub = IndigoServiceGrpc.newBlockingStub(channel)
 
-        val rolesCommand = RolesCommand(this)
+        val rolesCommand = SupCommandExecutor(RolesCommand(this))
         this.getCommand("roles")?.setExecutor(rolesCommand)
         this.getCommand("roles")?.tabCompleter = rolesCommand
         Bukkit.getPluginManager().registerEvents(PlayerListener(this), this)
