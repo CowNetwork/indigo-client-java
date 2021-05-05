@@ -2,8 +2,8 @@ package network.cow.indigo.client.spigot.command
 
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
-import network.cow.indigo.client.spigot.cowmand.Arguments
-import network.cow.indigo.client.spigot.cowmand.Cowmand
+import network.cow.cowmands.Arguments
+import network.cow.cowmands.Cowmand
 import network.cow.indigo.client.spigot.createRoleIdentifierOf
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.mooapis.indigo.v1.DeleteRoleRequest

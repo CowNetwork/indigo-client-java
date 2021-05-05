@@ -8,7 +8,7 @@ import network.cow.indigo.client.spigot.api.IndigoService
 import network.cow.indigo.client.spigot.cache.RoleCache
 import network.cow.indigo.client.spigot.cache.UserCache
 import network.cow.indigo.client.spigot.command.RolesCommand
-import network.cow.indigo.client.spigot.cowmand.Cowmands
+import network.cow.cowmands.Cowmands
 import network.cow.indigo.client.spigot.listener.PlayerListener
 import network.cow.indigo.client.spigot.listener.RoleUpdateCloudEventListener
 import network.cow.indigo.client.spigot.listener.UserPermissionUpdateCloudEventListener
