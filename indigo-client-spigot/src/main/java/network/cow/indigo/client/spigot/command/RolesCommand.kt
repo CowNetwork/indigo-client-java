@@ -11,19 +11,26 @@ import org.bukkit.command.CommandSender
 class RolesCommand(val plugin: IndigoPlugin) : Cowmand() {
 
     override val label = "roles"
-    override val aliases = listOf("cock", "assbitch")
     override val subCommands = listOf(
         RolesCreateCommand(plugin), RolesInfoCommand(plugin),
-        RolesDeleteCommand(plugin), RolesListCommand(plugin)
+        RolesDeleteCommand(plugin), RolesListCommand(plugin),
+        RolesGetCommand(plugin), RolesAddCommand(plugin),
+        RolesRemoveCommand(plugin), RolesPermissionCommand(plugin)
     )
     override val permission = "cow.indigo.command.roles"
 
     override fun execute(sender: CommandSender, args: Arguments) {
-        sender.sendMessage("RolesCommand#execute()")
-    }
-
-    override fun tabComplete(sender: CommandSender, args: Arguments): List<String> {
-        return subCommands.map { it.label }
+        sender.sendMessage("§cAvailable commands:")
+        sender.sendMessage("§7- /roles list")
+        sender.sendMessage("§7- /roles info <name>")
+        sender.sendMessage("§7- /roles create <name>")
+        sender.sendMessage("§7- /roles delete <name>")
+        sender.sendMessage("§7- /roles permission list <name>")
+        sender.sendMessage("§7- /roles permission add <name> <permission>")
+        sender.sendMessage("§7- /roles permission remove <name> <permission>")
+        sender.sendMessage("§7- /roles get <player>")
+        sender.sendMessage("§7- /roles add <player> <role>")
+        sender.sendMessage("§7- /roles remove <player> <role>")
     }
 
 }

@@ -4,6 +4,3 @@ main: network.cow.indigo.client.spigot.IndigoPlugin
 author: Tobias B.
 api-version: 1.16
 depend: [Grape, CloudEventsPlugin]
-
-commands:
-    roles:

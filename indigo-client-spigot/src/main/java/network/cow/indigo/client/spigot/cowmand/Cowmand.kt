@@ -1,17 +1,48 @@
 package network.cow.indigo.client.spigot.cowmand
 
+import network.cow.indigo.client.spigot.cowmand.exception.CowmandExceptionThrownException
+import network.cow.indigo.client.spigot.cowmand.exception.CowmandExecutionException
 import org.bukkit.command.CommandSender
+import org.bukkit.util.StringUtil
 
 /**
  * @author Tobias Büser
  */
 abstract class Cowmand {
 
+    /**
+     * Label of the command, e.g. `gamemode`.
+     */
     abstract val label: String
 
+    /**
+     * Available aliases to execute the command with.
+     */
     open val aliases = listOf<String>()
+
+    /**
+     * A short, English description on what the command does.
+     */
+    open val description = ""
+
+    /**
+     * Describes what parameters are allowed for this command.
+     * A complete usage string is `/$label $usage`.
+     *
+     * This only makes sense to use, if either no [subCommands] are
+     * set or if the command supports arguments besides subcommanding.
+     */
     open val usage = ""
+
+    /**
+     * List of subcommands this command supports.
+     */
     open val subCommands = listOf<Cowmand>()
+
+    /**
+     * Permission to check against the [CommandSender].
+     * If empty, no check will be executed.
+     */
     open val permission = ""
 
     /**
@@ -22,26 +53,54 @@ abstract class Cowmand {
     /**
      * Only completes at this level. The args are already sliced.
      */
-    open fun tabComplete(sender: CommandSender, args: Arguments) = emptyList<String>()
+    open fun tabComplete(sender: CommandSender, args: Arguments) = subCommandsLabels()
 
+    /**
+     * Will be called, when an error occurs during the execution of the command.
+     */
+    open fun handleError(sender: CommandSender, args: Arguments, error: CowmandExecutionException) {
+        if (error is CowmandExceptionThrownException) {
+            error.exception.printStackTrace()
+        }
+    }
+
+    fun subCommandsLabels() = this.subCommands.map { it.label }
+
+    /**
+     * Used to traverse the subcommands and find the right command
+     * to execute actions on.
+     */
     inner class Executor(val sender: CommandSender, val args: Arguments) {
 
         fun execute() = traverse({ command, args ->
-            command.execute(sender, args)
-        }, {
-            sender.sendMessage("§cNo permission dude.")
-        })
+            try {
+                command.execute(sender, args)
+            } catch (ex: Exception) {
+                handleError(sender, args, CowmandExceptionThrownException(ex))
+            }
+        }, { handleError(sender, args, it) })
 
         fun tabComplete(): List<String> {
-            var list: List<String> = emptyList()
+            val list = mutableListOf<String>()
 
-            traverse({ cmd, args -> list = cmd.tabComplete(sender, args) }, {})
+            traverse({ cmd, args ->
+                val completions = cmd.tabComplete(sender, args)
+
+                if (args.isEmpty()) {
+                    list.addAll(completions)
+                } else {
+                    StringUtil.copyPartialMatches(args[0], completions, list)
+                }
+            }, { handleError(sender, args, it) })
             return list
         }
 
-        private fun traverse(apply: (Cowmand, Arguments) -> Unit, error: () -> Unit) {
+        private fun traverse(apply: (Cowmand, Arguments) -> Unit, error: (CowmandExecutionException) -> Unit) {
             if (permission.isNotEmpty() && !sender.hasPermission(permission)) {
-                error()
+                error(CowmandExecutionException(
+                    "${sender.name} does not have permission $permission",
+                    CowmandExecutionException.Type.NO_PERMISSION
+                ))
                 return
             }
 
@@ -50,7 +109,7 @@ abstract class Cowmand {
                 return
             }
 
-            val arg = args[0]!!.toLowerCase()
+            val arg = args[0].toLowerCase()
             subCommands.forEach {
                 if (it.label == arg || it.aliases.contains(arg)) {
                     it.Executor(sender, args.slice(1)).traverse(apply, error)
@@ -64,43 +123,4 @@ abstract class Cowmand {
 
     }
 
-}
-
-class Arguments(private val list: List<String>) {
-
-    val size: Int; get() = list.size
-
-    constructor(array: Array<out String>) : this(array.toList())
-
-    fun isEmpty() = this.size == 0
-
-    operator fun get(index: Int): String? {
-        if (index >= list.size || index < 0) {
-            return null
-        }
-        return list[index]
-    }
-
-    fun get(index: Int, default: String): String {
-        return get(index) ?: default
-    }
-
-    fun slice(fromIndex: Int): Arguments {
-        if (fromIndex < 0) return this
-        if (fromIndex >= list.size) return Arguments(listOf())
-        return Arguments(list.slice(fromIndex until list.size))
-    }
-
-    override fun toString(): String {
-        return list.toString()
-    }
-
-}
-
-fun main() {
-    val args = Arguments(listOf("roles", "add", "Superioz", "admin"))
-    println(args)
-
-    val subArgs = args.slice(2)
-    println(subArgs)
 }
