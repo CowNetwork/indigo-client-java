@@ -55,6 +55,53 @@ class IndigoUser(private val user: User) {
     }
 
     /**
+     * Makes sure that given roles, if the user has them (by name),
+     * will be updated, i.e. replacing these roles entirely.
+     *
+     * Returns true if the user at least has one role updated by that action.
+     */
+    fun updateRoles(roles: List<Role>): Boolean {
+        roles.forEach {
+            if (!hasRole(it.name)) return false
+
+            val index = user.rolesList.indexOfFirst { role -> role.name == it.name }
+            user.rolesList[index] = it
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Makes sure that every role in [roles] is added
+     * to the [User.getRolesList].
+     *
+     * Returns true if the list size actually increased.
+     */
+    fun addRoles(roles: List<Role>): Boolean {
+        val beforeCount = user.rolesCount
+        user.rolesList.addAll(roles)
+        val afterCount = user.rolesCount
+
+        this.reloadPermissionList()
+        return afterCount > beforeCount
+    }
+
+    /**
+     * Makes sure that every role in [roles] is removed
+     * from the [User.getRolesList].
+     *
+     * Returns true if the list size actually decreased.
+     */
+    fun removeRoles(roles: List<String>): Boolean {
+        val beforeCount = user.rolesCount
+        user.rolesList.removeAll { roles.contains(it.name) }
+        val afterCount = user.rolesCount
+
+        this.reloadPermissionList()
+        return afterCount < beforeCount
+    }
+
+    /**
      * Reloads the [permissions] list by using the backed [user]'s
      * roles and custom permissions.
      */

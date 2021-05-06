@@ -39,5 +39,8 @@ class UserCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub, p
 
     fun invalidate(uuid: UUID) = userMap.remove(uuid)
 
-    
+    fun getUsersWithRole(roleName: String): List<Map.Entry<UUID, IndigoUser>> {
+        return userMap.entries.filter { it.component2().hasRole(roleName) }
+    }
+
 }

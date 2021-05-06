@@ -17,7 +17,6 @@ import network.cow.mooapis.indigo.v1.RoleUpdateEvent
 import network.cow.mooapis.indigo.v1.UserPermissionUpdateEvent
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
-import java.awt.Color
 import java.util.concurrent.TimeUnit
 
 /**
@@ -103,11 +102,5 @@ class IndigoPlugin : JavaPlugin() {
             logger.info("Error during shutdown, ignoring ..")
         }
     }
-
-    private fun String.toColor() = Color(
-        this.substring(0, 2).toInt(16),
-        this.substring(2, 4).toInt(16),
-        this.substring(4, 6).toInt(16)
-    )
 
 }

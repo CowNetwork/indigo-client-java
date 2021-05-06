@@ -20,6 +20,20 @@ fun injectPermissibleBase(player: Player, base: PermissibleBase) {
     }
 }
 
+fun getPermissibleBase(player: Player): PermissibleBase? {
+    try {
+        val entityClass = Class.forName("org.bukkit.craftbukkit.${getNMSVersion()}.entity.CraftHumanEntity")
+
+        val permField = entityClass.getDeclaredField("perm")
+        permField.isAccessible = true
+        return permField.get(player) as PermissibleBase
+    } catch (ex: Exception) {
+        // could not inject permission
+        ex.printStackTrace()
+    }
+    return null
+}
+
 fun getNMSVersion(): String {
     val bukkitPackage = Bukkit.getServer().javaClass.getPackage().name
     return bukkitPackage.substring(bukkitPackage.lastIndexOf(".") + 1)

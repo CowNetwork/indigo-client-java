@@ -3,9 +3,10 @@ package network.cow.indigo.client.spigot.listener
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.indigo.client.spigot.api.IndigoUser
+import network.cow.indigo.client.spigot.callEvent
+import network.cow.indigo.client.spigot.event.PermissionUpdateEvent
 import network.cow.indigo.client.spigot.handleGrpc
-import network.cow.indigo.client.spigot.permission.InjectedPermissibleBase
-import network.cow.indigo.client.spigot.permission.injectPermissibleBase
+import network.cow.indigo.client.spigot.reloadPermissions
 import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.GetUserRequest
 import network.cow.mooapis.indigo.v1.GetUserResponse
@@ -58,20 +59,8 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
             val indigoUser = IndigoUser(user)
             plugin.userCache.store(uniqueId, indigoUser)
 
-            injectPermissibleBase(event.player, InjectedPermissibleBase(event.player, indigoUser))
-            event.player.updateCommands()
-
-            // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
-            // create scoreboard team of role
-            /*Bukkit.getScheduler().runTask(plugin, Runnable {
-                val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return@Runnable
-                val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
-                val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
-
-                if (team != null && !team.hasEntry(event.player.name)) {
-                    team.addEntry(event.player.name)
-                }
-            })*/
+            event.player.reloadPermissions(plugin.userCache)
+            callEvent(plugin, PermissionUpdateEvent(event.player, PermissionUpdateEvent.Action.INJECTED))
         }
     }
 

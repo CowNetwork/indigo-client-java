@@ -1,8 +1,8 @@
 package network.cow.indigo.client.spigot.command
 
-import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.cowmands.Arguments
 import network.cow.cowmands.Cowmand
+import network.cow.indigo.client.spigot.IndigoPlugin
 import org.bukkit.command.CommandSender
 
 /**
@@ -31,6 +31,7 @@ class RolesCommand(val plugin: IndigoPlugin) : Cowmand() {
         sender.sendMessage("§7- /roles get <player>")
         sender.sendMessage("§7- /roles add <player> <role>")
         sender.sendMessage("§7- /roles remove <player> <role>")
+        sender.sendMessage("§7- /roles refetch [<target>]")
     }
 
 }
