@@ -3,12 +3,12 @@ package network.cow.indigo.client.spigot
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import network.cow.cloudevents.CloudEventsService
+import network.cow.cowmands.Cowmands
 import network.cow.grape.Grape
 import network.cow.indigo.client.spigot.api.IndigoService
 import network.cow.indigo.client.spigot.cache.RoleCache
 import network.cow.indigo.client.spigot.cache.UserCache
 import network.cow.indigo.client.spigot.command.RolesCommand
-import network.cow.cowmands.Cowmands
 import network.cow.indigo.client.spigot.listener.PlayerListener
 import network.cow.indigo.client.spigot.listener.RoleUpdateCloudEventListener
 import network.cow.indigo.client.spigot.listener.UserPermissionUpdateCloudEventListener
@@ -35,10 +35,14 @@ class IndigoPlugin : JavaPlugin() {
     override fun onEnable() {
         this.indigoConfig = IndigoConfig(
             this.config.getString("defaultRole"),
-            this.config.getBoolean("assignDefaultRole")
+            this.config.getBoolean("assignDefaultRole"),
+            IndigoConfig.Connection(
+                this.config.getString("service.host", "localhost")!!,
+                this.config.getInt("service.port", 6969)
+            )
         )
 
-        this.channel = ManagedChannelBuilder.forAddress("localhost", 6969)
+        this.channel = ManagedChannelBuilder.forAddress(indigoConfig.connection.host, indigoConfig.connection.port)
             .usePlaintext()
             .build()
 
