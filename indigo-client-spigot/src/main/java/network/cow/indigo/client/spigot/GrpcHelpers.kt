@@ -1,5 +1,6 @@
 package network.cow.indigo.client.spigot
 
+import com.google.protobuf.Message
 import io.grpc.Status
 import network.cow.mooapis.indigo.v1.Role
 import network.cow.mooapis.indigo.v1.RoleIdentifier
@@ -58,6 +59,19 @@ fun handleGrpc(exec: () -> Unit): GrpcStatusHelper {
             return GrpcStatusHelper(status, ex)
         }
         return GrpcStatusHelper(status, ex)
+    }
+}
+
+fun <T : Message> handleGrpcBetter(exec: () -> T): Pair<GrpcStatusHelper, T?> {
+    try {
+        val response = exec()
+        return GrpcStatusHelper(Status.OK, null) to response
+    } catch (ex: Exception) {
+        val status = Status.fromThrowable(ex)
+        if (status == Status.OK) {
+            return GrpcStatusHelper(status, ex) to null
+        }
+        return GrpcStatusHelper(status, ex) to null
     }
 }
 

@@ -5,9 +5,8 @@ import network.cow.cowmands.Arguments
 import network.cow.cowmands.Cowmand
 import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.indigo.client.spigot.createRole
-import network.cow.indigo.client.spigot.handleGrpc
+import network.cow.indigo.client.spigot.handleGrpcBetter
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
-import network.cow.mooapis.indigo.v1.InsertRoleResponse
 import org.bukkit.command.CommandSender
 
 /**
@@ -31,9 +30,8 @@ class RolesCreateCommand(val plugin: IndigoPlugin) : Cowmand() {
             return
         }
 
-        var response: InsertRoleResponse? = null
-        val status = handleGrpc {
-            response = plugin.stub.insertRole(
+        val (status, response) = handleGrpcBetter {
+            plugin.stub.insertRole(
                 InsertRoleRequest.newBuilder().setRole(createRole(name)).build()
             )
         }
