@@ -1,9 +1,9 @@
 package network.cow.indigo.client.spigot.command
 
 import io.grpc.Status
-import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.cowmands.Arguments
 import network.cow.cowmands.Cowmand
+import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.indigo.client.spigot.createRole
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.mooapis.indigo.v1.InsertRoleRequest
@@ -23,9 +23,9 @@ class RolesCreateCommand(val plugin: IndigoPlugin) : Cowmand() {
             sender.sendMessage("§c/roles create <name>")
             return
         }
-        val name = args[0]!!
+        val name = args[0]
 
-        val role = plugin.roleCache.getRole(name)
+        val role = plugin.cache.getRole(name)
         if (role != null) {
             sender.sendMessage("§cRole already exists.")
             return

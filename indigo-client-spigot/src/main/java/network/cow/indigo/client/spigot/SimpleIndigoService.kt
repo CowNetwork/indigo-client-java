@@ -12,15 +12,15 @@ import java.util.concurrent.CompletableFuture
 class SimpleIndigoService(private val plugin: IndigoPlugin) : IndigoService {
 
     override fun listRoles(): List<Role> {
-        return plugin.roleCache.getRoles().toList()
+        return plugin.cache.getRoles().toList()
     }
 
     override fun getRole(roleName: String): Role? {
-        return plugin.roleCache.getRole(roleName)
+        return plugin.cache.getRole(roleName)
     }
 
     override fun reloadCache() {
-        plugin.roleCache.reloadFromService()
+        plugin.cache.loadRolesFromService()
     }
 
     override fun reloadCacheAsync(callback: () -> Unit) {
@@ -31,11 +31,11 @@ class SimpleIndigoService(private val plugin: IndigoPlugin) : IndigoService {
     }
 
     override fun getUser(uuid: UUID): IndigoUser? {
-        val user = plugin.userCache.getUser(uuid)
+        val user = plugin.cache.getUser(uuid)
         if (user != null) {
             return user
         }
-        return plugin.userCache.loadUser(uuid)
+        return plugin.cache.loadUser(uuid)
     }
 
     override fun getUser(name: String): IndigoUser? {

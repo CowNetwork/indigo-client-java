@@ -1,8 +1,8 @@
 package network.cow.indigo.client.spigot.command
 
-import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.cowmands.Arguments
 import network.cow.cowmands.Cowmand
+import network.cow.indigo.client.spigot.IndigoPlugin
 import org.bukkit.command.CommandSender
 
 /**
@@ -19,8 +19,8 @@ class RolesInfoCommand(private val plugin: IndigoPlugin) : Cowmand() {
             return
         }
 
-        val name = args[0]!!
-        val role = plugin.roleCache.getRole(name)
+        val name = args[0]
+        val role = plugin.cache.getRole(name)
         if (role == null) {
             sender.sendMessage("§cRole does not exist.")
             return
@@ -34,6 +34,6 @@ class RolesInfoCommand(private val plugin: IndigoPlugin) : Cowmand() {
     }
 
     override fun tabComplete(sender: CommandSender, args: Arguments): List<String> {
-        return plugin.roleCache.getRoles().map { it.name }
+        return plugin.cache.getRoles().map { it.name }
     }
 }

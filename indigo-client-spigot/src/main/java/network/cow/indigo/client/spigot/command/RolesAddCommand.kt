@@ -31,13 +31,13 @@ class RolesAddCommand(private val plugin: IndigoPlugin) : Cowmand() {
             return
         }
 
-        val role = plugin.roleCache.getRole(roleName)
+        val role = plugin.cache.getRole(roleName)
         if (role == null) {
             sender.sendMessage("§cRole does not exist.")
             return
         }
 
-        val indigoUser = plugin.userCache.getUser(player.uniqueId)
+        val indigoUser = plugin.cache.getUser(player.uniqueId)
         if (indigoUser != null && indigoUser.hasRole(roleName)) {
             sender.sendMessage("§cThis player already has this role.")
             return
@@ -62,7 +62,7 @@ class RolesAddCommand(private val plugin: IndigoPlugin) : Cowmand() {
         return if (args.isEmpty()) {
             Bukkit.getOnlinePlayers().map { it.name }
         } else {
-            plugin.roleCache.getRoles().map { it.name }
+            plugin.cache.getRoles().map { it.name }
         }
     }
 }

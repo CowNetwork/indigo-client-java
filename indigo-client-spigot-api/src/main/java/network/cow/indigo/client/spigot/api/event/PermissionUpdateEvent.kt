@@ -1,13 +1,13 @@
-package network.cow.indigo.client.spigot.event
+package network.cow.indigo.client.spigot.api.event
 
-import network.cow.mooapis.indigo.v1.Role
-import org.bukkit.event.Event
+import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
+import org.bukkit.event.player.PlayerEvent
 
 /**
  * @author Tobias Büser
  */
-class RolesUpdateEvent(val entries: List<Entry>) : Event() {
+class PermissionUpdateEvent(player: Player) : PlayerEvent(player) {
 
     companion object {
         private val handlerList = HandlerList()
@@ -20,11 +20,5 @@ class RolesUpdateEvent(val entries: List<Entry>) : Event() {
     override fun getHandlers(): HandlerList {
         return handlerList
     }
-
-    enum class Action {
-        ADD, REMOVE, UPDATE
-    }
-
-    data class Entry(val role: Role, val action: Action)
 
 }

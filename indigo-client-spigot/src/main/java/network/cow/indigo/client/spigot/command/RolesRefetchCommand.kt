@@ -23,7 +23,7 @@ class RolesRefetchCommand(val plugin: IndigoPlugin) : Cowmand() {
     }
 
     override fun tabComplete(sender: CommandSender, args: Arguments): List<String> {
-        return plugin.roleCache.getRoles().map { it.name } + Bukkit.getOnlinePlayers().map { "@${it.name}" }
+        return plugin.cache.getRoles().map { it.name } + Bukkit.getOnlinePlayers().map { "@${it.name}" }
     }
 
 

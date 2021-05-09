@@ -2,11 +2,12 @@ package network.cow.indigo.client.spigot.api
 
 import network.cow.mooapis.indigo.v1.Role
 import network.cow.mooapis.indigo.v1.User
+import java.util.UUID
 
 /**
  * @author Tobias Büser
  */
-class IndigoUser(private val user: User) {
+class IndigoUser(val uuid: UUID, private val user: User) {
 
     lateinit var permissions: PermissionList
     val roles: List<Role>; get() = this.user.rolesList

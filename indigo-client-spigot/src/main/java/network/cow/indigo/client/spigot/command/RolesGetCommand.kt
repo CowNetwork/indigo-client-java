@@ -1,8 +1,8 @@
 package network.cow.indigo.client.spigot.command
 
-import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.cowmands.Arguments
 import network.cow.cowmands.Cowmand
+import network.cow.indigo.client.spigot.IndigoPlugin
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 
@@ -27,7 +27,7 @@ class RolesGetCommand(private val plugin: IndigoPlugin) : Cowmand() {
             return
         }
 
-        val indigoUser = plugin.userCache.getUser(player.uniqueId)
+        val indigoUser = plugin.cache.getUser(player.uniqueId)
         if (indigoUser == null) {
             sender.sendMessage("§cThis player does not have any roles.")
             return

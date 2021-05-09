@@ -6,8 +6,6 @@ import network.cow.cloudevents.CloudEventsService
 import network.cow.cowmands.Cowmands
 import network.cow.grape.Grape
 import network.cow.indigo.client.spigot.api.IndigoService
-import network.cow.indigo.client.spigot.cache.RoleCache
-import network.cow.indigo.client.spigot.cache.UserCache
 import network.cow.indigo.client.spigot.command.RolesCommand
 import network.cow.indigo.client.spigot.listener.PlayerListener
 import network.cow.indigo.client.spigot.listener.RoleUpdateCloudEventListener
@@ -27,8 +25,7 @@ class IndigoPlugin : JavaPlugin() {
     private lateinit var channel: ManagedChannel
     lateinit var stub: IndigoServiceGrpc.IndigoServiceBlockingStub
 
-    lateinit var roleCache: RoleCache
-    lateinit var userCache: UserCache
+    lateinit var cache: IndigoCache
     lateinit var indigoConfig: IndigoConfig
 
     override fun onEnable() {
@@ -51,12 +48,11 @@ class IndigoPlugin : JavaPlugin() {
         Bukkit.getPluginManager().registerEvents(PlayerListener(this), this)
 
         // load all roles and permission
-        this.roleCache = RoleCache(stub, this)
-        this.roleCache.reloadFromService()
-        if (this.roleCache.getRole(this.indigoConfig.defaultRole) == null) {
+        this.cache = IndigoCache(stub, this)
+        this.cache.loadRolesFromService()
+        if (this.cache.getRole(this.indigoConfig.defaultRole) == null) {
             logger.warning("Default role ${this.indigoConfig.defaultRole} does not exist.")
         }
-        this.userCache = UserCache(stub, this)
 
         // cloud events
         val service = Grape.getInstance()[CloudEventsService::class.java].getNow(null)
@@ -79,7 +75,7 @@ class IndigoPlugin : JavaPlugin() {
         Grape.getInstance().register(IndigoService::class.java, SimpleIndigoService(this))
 
         // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
-        /*roleCache.getRoles().forEach {
+        /*cache.getRoles().forEach {
             val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
             val teamName = "${it.priority}_${it.id.take(12)}"
 

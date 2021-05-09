@@ -13,7 +13,7 @@ class RolesListCommand(val plugin: IndigoPlugin) : Cowmand() {
     override val label = "list"
 
     override fun execute(sender: CommandSender, args: Arguments) {
-        val rolesList = plugin.roleCache.getRoles()
+        val rolesList = plugin.cache.getRoles()
         if (rolesList.isEmpty()) {
             sender.sendMessage("§cThere are no roles available.")
             return

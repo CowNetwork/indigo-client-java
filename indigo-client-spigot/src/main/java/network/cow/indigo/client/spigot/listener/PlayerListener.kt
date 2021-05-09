@@ -3,8 +3,6 @@ package network.cow.indigo.client.spigot.listener
 import io.grpc.Status
 import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.indigo.client.spigot.api.IndigoUser
-import network.cow.indigo.client.spigot.callEvent
-import network.cow.indigo.client.spigot.event.PermissionUpdateEvent
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.reloadPermissions
 import network.cow.indigo.client.spigot.runAsync
@@ -46,28 +44,27 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
             var user = response!!.user
             if (user == null && plugin.indigoConfig.assignDefaultRole) {
                 val defaultRoleName = plugin.indigoConfig.defaultRole ?: return@runAsync
-                val defaultRole = plugin.roleCache.getRole(defaultRoleName) ?: return@runAsync
+                val defaultRole = plugin.cache.getRole(defaultRoleName) ?: return@runAsync
 
                 user = User.newBuilder()
                     .setAccountId(uniqueId.toString())
                     .addRoles(defaultRole)
                     .build()
             } else {
-                plugin.roleCache.updateRoles(*user.rolesList.toTypedArray())
+                plugin.cache.updateRoles(*user.rolesList.toTypedArray())
             }
 
-            val indigoUser = IndigoUser(user)
-            plugin.userCache.store(uniqueId, indigoUser)
+            val indigoUser = IndigoUser(uniqueId, user)
+            plugin.cache.store(uniqueId, indigoUser)
 
-            event.player.reloadPermissions(plugin.userCache)
-            callEvent(plugin, PermissionUpdateEvent(event.player, PermissionUpdateEvent.Action.INJECTED))
+            event.player.reloadPermissions()
         }
     }
 
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
         val player = event.player
-        plugin.userCache.invalidate(player.uniqueId)
+        plugin.cache.invalidate(player.uniqueId)
 
         /*val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return
         val scoreboard = Bukkit.getScoreboardManager().mainScoreboard

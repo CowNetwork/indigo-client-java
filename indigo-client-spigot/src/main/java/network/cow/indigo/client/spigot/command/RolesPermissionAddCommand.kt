@@ -26,7 +26,7 @@ class RolesPermissionAddCommand(val plugin: IndigoPlugin) : Cowmand() {
         val name = args[0]
         val permission = args[1]
 
-        val role = plugin.roleCache.getRole(name)
+        val role = plugin.cache.getRole(name)
         if (role == null) {
             sender.sendMessage("§cRole does not exist.")
             return
@@ -56,7 +56,7 @@ class RolesPermissionAddCommand(val plugin: IndigoPlugin) : Cowmand() {
 
     override fun tabComplete(sender: CommandSender, args: Arguments): List<String> {
         return if (args.isEmpty()) {
-            plugin.roleCache.getRoles().map { it.name } + Bukkit.getOnlinePlayers().map { "@${it.name}" }
+            plugin.cache.getRoles().map { it.name } + Bukkit.getOnlinePlayers().map { "@${it.name}" }
         } else {
             emptyList()
         }
