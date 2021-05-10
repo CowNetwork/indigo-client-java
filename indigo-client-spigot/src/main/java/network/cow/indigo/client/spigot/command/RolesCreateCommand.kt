@@ -37,7 +37,9 @@ class RolesCreateCommand(val plugin: IndigoPlugin) : Cowmand() {
         }
         if (!status.isOk()) {
             status.handle(Status.Code.ALREADY_EXISTS) {
-                sender.sendMessage("§4Service already knows this role.")
+                sender.sendMessage("§4Service already knows this role. This could be due to a cache inconsistency, try reloading it with /roles refetch.")
+            }.handle(Status.Code.INVALID_ARGUMENT) {
+                sender.sendMessage("§4Role name is invalid.")
             }.handleCommandDefault(sender)
             return
         }
