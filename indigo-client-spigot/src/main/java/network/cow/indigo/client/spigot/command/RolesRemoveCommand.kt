@@ -1,8 +1,8 @@
 package network.cow.indigo.client.spigot.command
 
-import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.cowmands.Arguments
 import network.cow.cowmands.Cowmand
+import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.mooapis.indigo.v1.RemoveUserRolesRequest
 import network.cow.mooapis.indigo.v1.RoleIdentifier
@@ -59,7 +59,7 @@ class RolesRemoveCommand(private val plugin: IndigoPlugin) : Cowmand() {
     }
 
     override fun tabComplete(sender: CommandSender, args: Arguments): List<String> {
-        return if (args.isEmpty()) {
+        return if (args.size == 1) {
             Bukkit.getOnlinePlayers().map { it.name }
         } else {
             plugin.cache.getRoles().map { it.name }

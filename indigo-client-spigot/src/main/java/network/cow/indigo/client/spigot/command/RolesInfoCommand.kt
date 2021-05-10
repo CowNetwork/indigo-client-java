@@ -34,6 +34,8 @@ class RolesInfoCommand(private val plugin: IndigoPlugin) : Cowmand() {
     }
 
     override fun tabComplete(sender: CommandSender, args: Arguments): List<String> {
-        return plugin.cache.getRoles().map { it.name }
+        return if (args.size == 1) {
+            plugin.cache.getRoles().map { it.name }
+        } else emptyList()
     }
 }

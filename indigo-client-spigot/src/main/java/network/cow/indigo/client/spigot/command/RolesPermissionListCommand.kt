@@ -1,8 +1,8 @@
 package network.cow.indigo.client.spigot.command
 
-import network.cow.indigo.client.spigot.IndigoPlugin
 import network.cow.cowmands.Arguments
 import network.cow.cowmands.Cowmand
+import network.cow.indigo.client.spigot.IndigoPlugin
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 
@@ -31,6 +31,11 @@ class RolesPermissionListCommand(val plugin: IndigoPlugin) : Cowmand() {
             val role = plugin.cache.getRole(usableName)
             if (role == null) {
                 sender.sendMessage("§cRole does not exist.")
+                return
+            }
+
+            if (role.permissionsCount == 0) {
+                sender.sendMessage("§cThis role does not have any permissions.")
                 return
             }
 

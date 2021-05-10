@@ -15,7 +15,8 @@ class RolesCommand(val plugin: IndigoPlugin) : Cowmand() {
         RolesCreateCommand(plugin), RolesInfoCommand(plugin),
         RolesDeleteCommand(plugin), RolesListCommand(plugin),
         RolesGetCommand(plugin), RolesAddCommand(plugin),
-        RolesRemoveCommand(plugin), RolesPermissionCommand(plugin)
+        RolesRemoveCommand(plugin), RolesPermissionCommand(plugin),
+        RolesRefetchCommand(plugin)
     )
     override val permission = "cow.indigo.command.roles"
 

@@ -21,6 +21,11 @@ class InjectedPermissibleBase(player: Player, private val indigoUser: IndigoUser
     }
 
     override fun hasPermission(inName: String): Boolean {
+        if (indigoUser.roles.isEmpty()) {
+            // fall back to default permission check
+            return super.hasPermission(inName)
+        }
+
         return indigoUser.hasPermission(inName)
     }
 
