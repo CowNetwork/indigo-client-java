@@ -109,8 +109,13 @@ class IndigoCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub,
     }
 
     private fun updateRole(role: Role): RolesUpdateEvent.Action? {
+        println("updateRole(${role.name})")
         val previousRole = rolesMap[role.name]
         rolesMap[role.name] = role
+
+        println("=> Previous: ${previousRole?.name}: ${previousRole?.permissionsList}")
+        println("=> New: ${role.name}: ${role.permissionsList}")
+        println("=> Equals: ${previousRole == role}")
 
         if (previousRole == null) {
             return RolesUpdateEvent.Action.ADD
@@ -165,12 +170,11 @@ class IndigoCache(private val stub: IndigoServiceGrpc.IndigoServiceBlockingStub,
     }
 
     private fun updateUsersRole(role: Role, action: RolesUpdateEvent.Action) {
+        println("updateUsersRole(${role.name}, $action)")
         this.getUsersWithRole(role).forEach { user ->
             when (action) {
                 RolesUpdateEvent.Action.ADD -> {
-                    if (!user.addRoles(listOf(role))) {
-                        return@forEach
-                    }
+                    // ignore, that does not make sense
                 }
                 RolesUpdateEvent.Action.REMOVE -> {
                     if (!user.removeRoles(listOf(role.name))) {

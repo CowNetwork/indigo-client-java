@@ -8,6 +8,7 @@ import network.cow.indigo.client.spigot.reloadPermissions
 import network.cow.indigo.client.spigot.runAsync
 import network.cow.mooapis.indigo.v1.GetUserRequest
 import network.cow.mooapis.indigo.v1.GetUserResponse
+import network.cow.mooapis.indigo.v1.Role
 import network.cow.mooapis.indigo.v1.User
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -42,13 +43,18 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
             }
 
             var user = response!!.user
-            if (user == null && plugin.indigoConfig.assignDefaultRole) {
-                val defaultRoleName = plugin.indigoConfig.defaultRole ?: return@runAsync
-                val defaultRole = plugin.cache.getRole(defaultRoleName) ?: return@runAsync
+            if (user.rolesList.isEmpty()) {
+                val defaultRoles = mutableListOf<Role>()
+                if (plugin.indigoConfig.assignDefaultRole) {
+                    val defaultRoleName = plugin.indigoConfig.defaultRole
+                    val defaultRole = plugin.cache.getRole(defaultRoleName)
+
+                    defaultRole?.apply { defaultRoles.add(this) }
+                }
 
                 user = User.newBuilder()
                     .setAccountId(uniqueId.toString())
-                    .addRoles(defaultRole)
+                    .addAllRoles(defaultRoles)
                     .build()
             } else {
                 plugin.cache.updateRoles(*user.rolesList.toTypedArray())

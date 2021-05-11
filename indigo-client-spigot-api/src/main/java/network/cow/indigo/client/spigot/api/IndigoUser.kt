@@ -10,7 +10,7 @@ import java.util.UUID
 class IndigoUser(val uuid: UUID, private val user: User) {
 
     lateinit var permissions: PermissionList
-    val roles: List<Role>; get() = this.user.rolesList
+    val roles: MutableList<Role> = user.rolesList.toMutableList()
 
     init {
         this.reloadPermissionList()
@@ -25,17 +25,17 @@ class IndigoUser(val uuid: UUID, private val user: User) {
      * first occuring one, handled by [maxByOrNull].
      */
     fun getTopRole(): Role? {
-        if (user.rolesList.isEmpty()) {
+        if (roles.isEmpty()) {
             return null
         }
-        return user.rolesList.filter { !it.transient }.maxByOrNull { it.priority }
+        return roles.filter { !it.transient }.maxByOrNull { it.priority }
     }
 
     /**
      * Returns a list of all [Role]s that are [Role.getTransient], sorted by
      * their priority descending.
      */
-    fun getTransientRoles() = user.rolesList.filter { it.transient }.sortedByDescending { it.priority }
+    fun getTransientRoles() = this.roles.filter { it.transient }.sortedByDescending { it.priority }
 
     fun hasPermission(perm: String) = this.permissions.hasPermission(perm)
 
@@ -49,8 +49,8 @@ class IndigoUser(val uuid: UUID, private val user: User) {
     }
 
     fun setRoles(roles: List<Role>) {
-        user.rolesList.clear()
-        user.rolesList.addAll(roles)
+        this.roles.clear()
+        this.roles.addAll(roles)
 
         this.reloadPermissionList()
     }
@@ -62,14 +62,20 @@ class IndigoUser(val uuid: UUID, private val user: User) {
      * Returns true if the user at least has one role updated by that action.
      */
     fun updateRoles(roles: List<Role>): Boolean {
+        var hasChanged = false
         roles.forEach {
-            if (!hasRole(it.name)) return false
+            if (!hasRole(it.name)) return@forEach
 
-            val index = user.rolesList.indexOfFirst { role -> role.name == it.name }
-            user.rolesList[index] = it
-            return true
+            hasChanged = true
+            val index = this.roles.indexOfFirst { role -> role.name == it.name }
+            this.roles[index] = it
+            return@forEach
         }
-        return false
+
+        if (hasChanged) {
+            this.reloadPermissionList()
+        }
+        return hasChanged
     }
 
     /**
@@ -80,7 +86,7 @@ class IndigoUser(val uuid: UUID, private val user: User) {
      */
     fun addRoles(roles: List<Role>): Boolean {
         val beforeCount = user.rolesCount
-        user.rolesList.addAll(roles)
+        this.roles.addAll(roles)
         val afterCount = user.rolesCount
 
         this.reloadPermissionList()
@@ -95,7 +101,7 @@ class IndigoUser(val uuid: UUID, private val user: User) {
      */
     fun removeRoles(roles: List<String>): Boolean {
         val beforeCount = user.rolesCount
-        user.rolesList.removeAll { roles.contains(it.name) }
+        this.roles.removeAll { roles.contains(it.name) }
         val afterCount = user.rolesCount
 
         this.reloadPermissionList()
@@ -109,7 +115,7 @@ class IndigoUser(val uuid: UUID, private val user: User) {
     private fun reloadPermissionList() {
         var prevPriority = 0
         var permissionList = PermissionList(listOf())
-        this.user.rolesList.forEach { role ->
+        this.roles.forEach { role ->
             val rolePermissionList = PermissionList(role.permissionsList)
             val superior = role.priority > prevPriority
 
