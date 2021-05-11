@@ -23,7 +23,7 @@ class RolesAddCommand(private val plugin: IndigoPlugin) : Cowmand() {
             return
         }
         val playerName = args[0]
-        val roleName = args[0]
+        val roleName = args[1]
 
         val player = Bukkit.getPlayer(playerName)
         if (player == null) {

@@ -48,14 +48,12 @@ class UserPermissionUpdateCloudEventListener(private val plugin: IndigoPlugin) :
         when (event.action) {
             UserPermissionUpdateEvent.Action.ACTION_PERM_ADDED,
             UserPermissionUpdateEvent.Action.ACTION_PERM_REMOVED -> {
-                player.sendMessage("§7Your custom permissions got updated, you fucking dumbass.")
                 indigoUser.setCustomPermissions(user.customPermissionsList)
 
                 player.reloadPermissions()
             }
             UserPermissionUpdateEvent.Action.ACTION_ROLE_ADDED,
             UserPermissionUpdateEvent.Action.ACTION_ROLE_REMOVED -> {
-                player.sendMessage("§7Your roles got updated, you fucking dumbass.")
                 val rolesList = user.rolesList.mapNotNull { plugin.cache.getRoleByUuid(it.id) }
                 indigoUser.setRoles(rolesList)
 

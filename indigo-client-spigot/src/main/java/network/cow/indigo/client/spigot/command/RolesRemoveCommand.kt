@@ -23,7 +23,7 @@ class RolesRemoveCommand(private val plugin: IndigoPlugin) : Cowmand() {
             return
         }
         val playerName = args[0]
-        val roleName = args[0]
+        val roleName = args[1]
 
         val player = Bukkit.getPlayer(playerName)
         if (player == null) {
@@ -62,7 +62,10 @@ class RolesRemoveCommand(private val plugin: IndigoPlugin) : Cowmand() {
         return if (args.size == 1) {
             Bukkit.getOnlinePlayers().map { it.name }
         } else {
-            plugin.cache.getRoles().map { it.name }
+            val player = Bukkit.getPlayer(args[0]) ?: return emptyList()
+            val indigoUser = plugin.cache.getUser(player.uniqueId) ?: return emptyList()
+
+            indigoUser.roles.map { it.name }
         }
     }
 }
