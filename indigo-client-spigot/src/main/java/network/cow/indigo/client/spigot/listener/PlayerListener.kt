@@ -6,9 +6,10 @@ import network.cow.indigo.client.spigot.api.IndigoUser
 import network.cow.indigo.client.spigot.handleGrpc
 import network.cow.indigo.client.spigot.reloadPermissions
 import network.cow.indigo.client.spigot.runAsync
+import network.cow.mooapis.indigo.v1.AddUserRolesRequest
 import network.cow.mooapis.indigo.v1.GetUserRequest
 import network.cow.mooapis.indigo.v1.GetUserResponse
-import network.cow.mooapis.indigo.v1.Role
+import network.cow.mooapis.indigo.v1.RoleIdentifier
 import network.cow.mooapis.indigo.v1.User
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -44,18 +45,30 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
 
             var user = response!!.user
             if (user.rolesList.isEmpty()) {
-                val defaultRoles = mutableListOf<Role>()
-                if (plugin.indigoConfig.assignDefaultRole) {
-                    val defaultRoleName = plugin.indigoConfig.defaultRole
-                    val defaultRole = plugin.cache.getRole(defaultRoleName)
+                val defaultRoleName = plugin.indigoConfig.defaultRole
+                val defaultRole = plugin.cache.getRole(defaultRoleName)
 
-                    defaultRole?.apply { defaultRoles.add(this) }
+                if (defaultRole != null && plugin.indigoConfig.assignDefaultRole) {
+                    val assignStatus = handleGrpc {
+                        plugin.stub.addUserRoles(
+                            AddUserRolesRequest.newBuilder()
+                                .setUserAccountId(uniqueId.toString())
+                                .addRoleIds(RoleIdentifier.newBuilder().setUuid(defaultRole.id).build())
+                                .build()
+                        )
+                    }
+                    if (!assignStatus.isOk()) {
+                        plugin.logger.warning("Tried to assign default role to $uniqueId, but it failed.")
+                    } else {
+                        // only assign role if it succeeded
+                        user = User.newBuilder()
+                            .setAccountId(uniqueId.toString())
+                            .addRoles(defaultRole)
+                            .build()
+
+                        plugin.logger.info("Assigned default role to $uniqueId.")
+                    }
                 }
-
-                user = User.newBuilder()
-                    .setAccountId(uniqueId.toString())
-                    .addAllRoles(defaultRoles)
-                    .build()
             } else {
                 plugin.cache.updateRoles(*user.rolesList.toTypedArray())
             }
