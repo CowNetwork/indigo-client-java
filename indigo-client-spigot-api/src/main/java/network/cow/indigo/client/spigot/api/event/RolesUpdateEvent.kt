@@ -12,6 +12,7 @@ class RolesUpdateEvent(val entries: List<Entry>) : Event() {
     companion object {
         private val handlerList = HandlerList()
 
+        @JvmStatic
         fun getHandlerList(): HandlerList {
             return handlerList
         }

@@ -73,22 +73,6 @@ class IndigoPlugin : JavaPlugin() {
         )
 
         Grape.getInstance().register(IndigoService::class.java, SimpleIndigoService(this))
-
-        // TODO indigo-scoreboards as a seperate plugin (and seperate github project)
-        /*cache.getRoles().forEach {
-            val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
-            val teamName = "${it.priority}_${it.id.take(12)}"
-
-            var team = scoreboard.getTeam(teamName)
-            team?.unregister()
-
-            team = scoreboard.registerNewTeam(teamName)
-            val color = it.color.toColor()
-            val bukkitColor = NamedTextColor.nearestTo(TextColor.color(color.red, color.green, color.blue))
-
-            team.color(NamedTextColor.GRAY)
-            team.prefix(Component.text(it.id + " ", bukkitColor))
-        }*/
     }
 
     override fun onDisable() {

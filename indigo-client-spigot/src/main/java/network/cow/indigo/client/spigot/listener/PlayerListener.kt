@@ -12,6 +12,7 @@ import network.cow.mooapis.indigo.v1.GetUserResponse
 import network.cow.mooapis.indigo.v1.RoleIdentifier
 import network.cow.mooapis.indigo.v1.User
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -21,7 +22,7 @@ import org.bukkit.event.player.PlayerQuitEvent
  */
 class PlayerListener(private val plugin: IndigoPlugin) : Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     fun onJoin(event: PlayerJoinEvent) {
         val uniqueId = event.player.uniqueId
 
@@ -84,14 +85,6 @@ class PlayerListener(private val plugin: IndigoPlugin) : Listener {
     fun onQuit(event: PlayerQuitEvent) {
         val player = event.player
         plugin.cache.invalidate(player.uniqueId)
-
-        /*val role = indigoUser.rolesList.maxByOrNull { it.priority } ?: return
-        val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
-        val team = scoreboard.getTeam("${role.priority}_${role.id.take(12)}")
-
-        if (team != null && team.hasEntry(event.player.name)) {
-            team.removeEntry(event.player.name)
-        }*/
     }
 
 }
